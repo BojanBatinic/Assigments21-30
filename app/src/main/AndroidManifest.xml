@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!-- In principle, each app should have unique package -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.example.androiddevelopment.glumcilegende">
+
+    <!-- Declares that the app needs a permission to access internet -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+
+    <application
+        android:label="@string/app_name"
+        android:theme="@style/AppTheme">
+
+        <!-- Declares 1st (main) activity. Action "MAIN" and category "LAUNCHER" properties makes it visible in the application launcher -->
+        <activity
+            android:name="com.example.androiddevelopment.glumcilegende.activities.MainActivity"
+            android:label="@string/activity_main_name"
+            android:icon="@mipmap/ic_launcher"
+            android:theme="@style/AppTheme.NoActionBar">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- Declares SettingsActivity (the activity used to set app preferences). -->
+        <activity
+            android:name="com.example.androiddevelopment.glumcilegende.activities.SettingsActivity"
+            android:icon="@mipmap/ic_launcher"
+            android:label="@string/activity_settings_name"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:parentActivityName="com.example.androiddevelopment.glumcilegende.activities.MainActivity" />
+
+    </application>
+
+</manifest>

@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!-- CoordinatorLayout is a super-powered FrameLayout intended for two primary use cases:
+    (1) As a top-level application decor or chrome layout
+    (2) As a container for a specific interaction with one or more child views
+ -->
+<android.support.design.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin">
+
+
+
+    <!-- RelativeLayout layouts views relative to one another and/or relative to the parent view. -->
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <!-- ImageView displays an arbitrary image, such as an icon. -->
+    <ImageView
+        android:id="@+id/image"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+
+    <!-- TextView displays text to the user. -->
+    <TextView
+        android:id="@+id/name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/image"
+        android:textSize="24sp"
+        android:gravity="center_vertical"
+        android:textColor="#000000"
+        android:textStyle="bold"/>
+
+    <!-- TextView displays text to the user. -->
+    <TextView
+        android:id="@+id/biografija"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/name"
+        android:textSize="18sp"
+        android:gravity="center_vertical"
+        android:textColor="#000000"/>
+
+    <!-- Spinners provide a quick way to select one value from a set. -->
+    <Spinner
+        android:id="@+id/film"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/biografija" />
+
+    <RatingBar
+        android:id="@+id/rating"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:numStars="5"
+        android:layout_below="@id/film"/>
+
+
+
+    </RelativeLayout>
+
+    <!-- Floating action buttons are used for a special type of promoted action. They are distinguished by
+    a circled icon floating above the UI and have special motion behaviors related to morphing, launching, and the transferring anchor point.  -->
+    <!-- Button can be pressed, or clicked, by the user to perform an action. -->
+ <!--   <Button -->
+    <android.support.design.widget.FloatingActionButton
+        android:id="@+id/like"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:src="@drawable/ic_action_like" />
+
+</android.support.design.widget.CoordinatorLayout>
+
+
+
+
