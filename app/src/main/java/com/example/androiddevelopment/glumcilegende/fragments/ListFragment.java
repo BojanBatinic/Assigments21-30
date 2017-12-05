@@ -6,6 +6,10 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
+import android.widget.ArrayAdapter;
+import android.widget.ListView;
 
 import com.example.androiddevelopment.glumcilegende.R;
 
@@ -33,13 +37,8 @@ public class ListFragment extends Fragment {
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
 
-        //Posto zelimo da se lista proizvoda prikazuje kada asinhrno zadatak zavrsi posao
-        //ovaj kod cemo prebaciti u asinhroni zadatak
-        // Shows a toast message (a pop-up message)
-        //Toast.makeText(getActivity(), "MasterFragemnt.onActivityCreated()", Toast.LENGTH_SHORT).show();
-
         //Loads glumce from array resource
-     /*   String[] glumci = getResources().getStringArray(R.array.glumci);
+        String[] glumci = getResources().getStringArray(R.array.glumci);
 
         //creates an ArrayAdapter from the array of String
         ArrayAdapter<String> dataAdapter = new ArrayAdapter<String>(getActivity(), R.layout.list_item, glumci);
@@ -54,7 +53,7 @@ public class ListFragment extends Fragment {
                 //Send the URL to the host activity
                 listener.onProductSelected((int)id);
             }
-        }); */
+        });
 
     }
 
@@ -86,16 +85,12 @@ public class ListFragment extends Fragment {
     public void onAttach(Activity activity) {
         super.onAttach(activity);
 
-        //Posto zelimo da se lista proizvoda prikazuje kada asinhrno zadatak zavrsi posao
-        //ovaj kod cemo prebaciti u asinhroni zadatak
-
         //shows a toast messsage (a pop-up message)
-       // Toast.makeText(getActivity(), "ListFragment.onAttach()", Toast.LENGTH_SHORT).show();
-     /*   try {
+        try {
             listener = (OnProductSelectedListener) activity;
         } catch (ClassCastException e){
             throw new ClassCastException(activity.toString() + " must implement OnItemSelectedListener");
-        } */
+        }
     }
 
   }

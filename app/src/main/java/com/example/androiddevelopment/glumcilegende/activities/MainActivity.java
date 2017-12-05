@@ -23,12 +23,14 @@ import java.util.ArrayList;
 
 import com.example.androiddevelopment.glumcilegende.R;
 import com.example.androiddevelopment.glumcilegende.adapters.DrawerListAdapter;
+import com.example.androiddevelopment.glumcilegende.async.SimpleService;
 import com.example.androiddevelopment.glumcilegende.dialogs.AboutDialog;
 import com.example.androiddevelopment.glumcilegende.fragments.DetailFragment;
 import com.example.androiddevelopment.glumcilegende.fragments.ListFragment;
 import com.example.androiddevelopment.glumcilegende.fragments.ListFragment.OnProductSelectedListener;
 import com.example.androiddevelopment.glumcilegende.model.NavigationItem;
 import com.example.androiddevelopment.glumcilegende.async.SimpleSyncTask;
+import com.example.androiddevelopment.glumcilegende.tools.ReviewerTools;
 
 // Each activity extends Activity class or AppCompatActivity class
 public class MainActivity extends AppCompatActivity implements OnProductSelectedListener {
@@ -208,12 +210,23 @@ public class MainActivity extends AppCompatActivity implements OnProductSelected
      *Svaki element unutar 'R.menu.activity_item_detail' fajla ima polje id na osnovu koga
      *lako mozemo odrediti sta smo tacno kliknuli.
      */
+
+    /**
+     *
+     * Metoda koja je izmenjena da reflektuje rad sa Asinhronim zadacima
+     */
     @Override
     public boolean onOptionsItemSelected(MenuItem item){
         switch (item.getItemId()){
             case R.id.action_refresh:
-                Toast.makeText(MainActivity.this, "Sinhronizacija pokrenuta u pozadini niti. dobro :)",Toast.LENGTH_SHORT).show();
-                new SimpleSyncTask(MainActivity.this).execute();
+                Toast.makeText(MainActivity.this, "Sinhronizacija dugo traje koristite servis. dobro :)",Toast.LENGTH_SHORT).show();
+
+               int status = ReviewerTools.getConnectivityStatus(getApplicationContext());
+
+               Intent intent = new Intent(MainActivity.this, SimpleService.class);
+               intent.putExtra("STATUS", status);
+
+               startService(intent);
                 break;
             case R.id.action_add:
                 try {

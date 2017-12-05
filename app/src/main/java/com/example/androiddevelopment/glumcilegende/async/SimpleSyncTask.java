@@ -1,6 +1,9 @@
 package com.example.androiddevelopment.glumcilegende.async;
 
 import android.app.Activity;
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.content.Context;
 import android.os.AsyncTask;
 import android.view.View;
 import android.widget.AdapterView;
@@ -10,6 +13,7 @@ import android.widget.Toast;
 
 import com.example.androiddevelopment.glumcilegende.R;
 import com.example.androiddevelopment.glumcilegende.fragments.ListFragment;
+import com.example.androiddevelopment.glumcilegende.tools.ReviewerTools;
 
 import java.util.List;
 
@@ -29,14 +33,12 @@ import java.util.List;
  * vratiti kao povratnu vrednost metodi onPostExecute
  */
 
-public class SimpleSyncTask extends AsyncTask<Void, Void, Void>{
+public class SimpleSyncTask extends AsyncTask<Integer, Void, Integer>{
 
-    private Activity activity;
-    private ListFragment.OnProductSelectedListener listener;
+    private Context context;
 
-    public SimpleSyncTask(Activity activity){
-        this.activity = activity;
-        listener = (ListFragment.OnProductSelectedListener) activity;
+    public SimpleSyncTask(Context context){
+        this.context = context;
     }
     /**
      * Metoda se poziva pre samog starta pozadinskog zadatka
@@ -52,31 +54,28 @@ public class SimpleSyncTask extends AsyncTask<Void, Void, Void>{
      * Sav posao koji dugo traje izvrsavati unutar ove metode.
      */
     @Override
-    protected Void doInBackground(Void... params) {
+    protected Integer doInBackground(Integer... params) {
         try {
             //simulacija posla koji se obavlja u pozadini i traje duze vreme
             Thread.sleep(6000);
         }catch (InterruptedException e){
             e.printStackTrace();
         }
-        return null;
+        return params[0];
     }
 
-    private void fillGlumci(){
-        // Load glumci names from array resource
-        String[] glumci = activity.getResources().getStringArray(R.array.glumci);
-        // Create an ArrayAdaptar from the array of Strings
-        ArrayAdapter<String> adapter = new ArrayAdapter<String>(activity, R.layout.list_item, glumci);
-        ListView listView = (ListView) activity.findViewById(R.id.glumci);
-        // Assign adapter to ListView
-        listView.setAdapter(adapter);
-        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                // send the URL to the host activity
-                listener.onProductSelected((int)id);
-            }
-        });
+    private void createNotification(String contentTitle, String contentText){
+
+        NotificationManager mnm = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+        //Build the notification using Notification.Builder
+        Notification.Builder builder = new Notification.Builder(context)
+                .setSmallIcon(android.R.drawable.stat_sys_download)
+                .setAutoCancel(true)
+                .setContentTitle(contentTitle)
+                .setContentText(contentText);
+
+        //Show the notification
+        mnm.notify(1, builder.build());
     }
 
     /**
@@ -84,9 +83,11 @@ public class SimpleSyncTask extends AsyncTask<Void, Void, Void>{
      * Ako je potrebno osloboditi resurse ili obrisati elemente koji vise ne trebaju.
      */
     @Override
-    protected void onPostExecute(Void aVoid){
-        Toast.makeText(activity, "Sync done", Toast.LENGTH_SHORT).show();
-        fillGlumci();
+    protected void onPostExecute(Integer type){
+        String text = ReviewerTools.getConnectionType(type);
+        Toast.makeText( context, text, Toast.LENGTH_SHORT).show();
+        //dodatni zadak
+        createNotification("Termin 22 dodatni zadatak", text);
     }
 
 }
