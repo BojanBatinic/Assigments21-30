@@ -37,5 +37,9 @@ public class ReviewerTools {
                 return "";
         }
     }
+
+    public static int calculateTimeTillNextSync(int minutes){
+        return 1000 * 60 * minutes;
+    }
 }
 

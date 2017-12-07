@@ -39,9 +39,24 @@
             android:theme="@style/AppTheme.NoActionBar"
             android:parentActivityName="com.example.androiddevelopment.glumcilegende.activities.MainActivity" />
 
-        <!--Moramo definisati punu putanju do naseg servisa-->
-        <service android:name=".async.SimpleService"/>
+        <!--
+        Moramo definisati punu putanju do naseg servis-a.
+        Ovo je obavezno, bez definicije servis-a necemo moci ni da ga koristimo.
+        -->
+        <service android:name="com.example.androiddevelopment.glumcilegende.async.SimpleService"/>
 
+        <!--
+        Moramo definisati punu putanju do naseg receiver-a.
+        Ovo je obavezno, bez definicije receiver-a necemo moci ni da ga koristimo.
+        -->
+        <receiver android:name="com.example.androiddevelopment.glumcilegende.async.SimpleReceiver"/>
+
+        <!--
+        Moramo definisati punu putanju do naseg servis-a.
+        Ovo je obavezno, bez definicije servis-a necemo moci ni da ga koristimo.
+        -->
+        <service android:name="com.example.androiddevelopment.glumcilegende.async.CommentService"/>
+        
     </application>
 
 </manifest>

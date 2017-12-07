@@ -11,6 +11,7 @@ import com.example.androiddevelopment.glumcilegende.R;
  */
 
 public class AboutDialog extends AlertDialog.Builder {
+
     public AboutDialog(Context context) {
         super(context);
 

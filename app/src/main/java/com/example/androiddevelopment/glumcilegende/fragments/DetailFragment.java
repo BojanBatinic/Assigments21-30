@@ -153,7 +153,7 @@ public class DetailFragment extends Fragment implements AdapterView.OnItemSelect
     @Override
     public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
         // You can retrieve the selected item using
-        //product.setFilm(CategoryProvider.getCategoryById((int)id));
+        //product.setFilm(FilmProvider.getFilmById((int)id));
     }
 
     @Override

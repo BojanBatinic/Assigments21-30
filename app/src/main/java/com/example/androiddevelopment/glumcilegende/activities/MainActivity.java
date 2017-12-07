@@ -1,7 +1,12 @@
 package com.example.androiddevelopment.glumcilegende.activities;
 
+import android.app.AlarmManager;
+import android.app.Dialog;
 import android.app.FragmentTransaction;
+import android.app.PendingIntent;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.res.Configuration;
 import android.os.Bundle;
 import android.support.v4.view.GravityCompat;
@@ -14,6 +19,8 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
@@ -23,6 +30,9 @@ import java.util.ArrayList;
 
 import com.example.androiddevelopment.glumcilegende.R;
 import com.example.androiddevelopment.glumcilegende.adapters.DrawerListAdapter;
+import com.example.androiddevelopment.glumcilegende.async.CommentService;
+import com.example.androiddevelopment.glumcilegende.async.CommentTask;
+import com.example.androiddevelopment.glumcilegende.async.SimpleReceiver;
 import com.example.androiddevelopment.glumcilegende.async.SimpleService;
 import com.example.androiddevelopment.glumcilegende.dialogs.AboutDialog;
 import com.example.androiddevelopment.glumcilegende.fragments.DetailFragment;
@@ -71,6 +81,10 @@ public class MainActivity extends AppCompatActivity implements OnProductSelected
 
     private int productId = 0; // selected item id
 
+    private SimpleReceiver sync;
+    private PendingIntent pendingIntent;
+    private AlarmManager manager;
+
     // onCreate method is a lifecycle method called when he activity is starting
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -101,7 +115,7 @@ public class MainActivity extends AppCompatActivity implements OnProductSelected
         drawerLayout.setDrawerShadow(R.drawable.drawer_shadow, GravityCompat.START);
         /* Zelimo da reagujemo na izbog stavki unutar navigation drawer-a.
            Prethodno smo definisali klasu koja ce na osnovu pozicije reagovati
-           Ovde povezujemo izbor stavke i kako ragovati */
+           Ovde povezujemo izbor stavke i kako reagovati */
         drawerList.setOnItemClickListener(new DrawerItemClickListener());
         drawerList.setAdapter(adapter);
 
@@ -229,12 +243,48 @@ public class MainActivity extends AppCompatActivity implements OnProductSelected
                startService(intent);
                 break;
             case R.id.action_add:
-                try {
+                //kreiramo dijalog
+                final Dialog dialog = new Dialog(MainActivity.this);
+
+                //dodajemo layout koji smo prethodno definisali
+                dialog.setContentView(R.layout.dialog_layout);
+
+                //dodajemo naslov dijalogu
+                dialog.setTitle("Comment dialog");
+
+                //na klik OK dugmeta preuzimamo sadrzaj tekstualnih polja i saljemo servisu
+                Button ok = (Button) dialog.findViewById(R.id.ok);
+                ok.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        EditText editTitle = (EditText) dialog.findViewById(R.id.title);
+                        EditText editComment = (EditText) dialog.findViewById(R.id.comment);
+
+                        Intent commentIntent = new Intent(MainActivity.this, CommentService.class);
+                        commentIntent.putExtra("title", editTitle.getText().toString());
+                        commentIntent.putExtra("comment", editComment.getText().toString());
+                        startService(commentIntent);
+                        dialog.dismiss();
+                    }
+                });
+
+                //na klik cancel dugmenta samo ispisemo toast poruku
+                Button cancel = (Button) dialog.findViewById(R.id.cancel);
+                cancel.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        Toast.makeText(MainActivity.this, "No comment", Toast.LENGTH_SHORT).show();
+                    }
+                });
+
+                //prikazemo dijalog
+                dialog.show();
+               /* try {
                     Toast.makeText(MainActivity.this, "Sinhronizacija pokrenuta u glavnoj niti. Nije dobro :(", Toast.LENGTH_SHORT).show();
                     Thread.sleep(6000);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
-                }
+                } */
                 break;
         }
         return super.onOptionsItemSelected(item);
@@ -273,9 +323,9 @@ public class MainActivity extends AppCompatActivity implements OnProductSelected
     */
     private void selectItemFromDrawer(int position) {
         if (position == 0) {
-            // FirstActivity is already shown
+            // MainActivity is already shown
         } else if (position == 1) {
-            Intent settings = new Intent(MainActivity.this,SettingsActivity.class);
+            Intent settings = new Intent(MainActivity.this, SettingsActivity.class);
             startActivity(settings);
         } else if (position == 2) {
             if (dialog == null) {
@@ -338,5 +388,88 @@ public class MainActivity extends AppCompatActivity implements OnProductSelected
             detailShown = false;
         }
     }
+
+    /**
+     * Prilikom startovanja aplikacije potrebno je registrovati
+     * elemente sa kojimaa radimo. Kada aplikaciaj nije aktivna
+     * te elemente moramo da uklnimo.
+     */
+    @Override
+    protected void onResume() {
+
+        super.onResume();
+
+        setUpReceiver();
+        setUpManager();
+    }
+    /**
+     * Registrujemo nas BroadcastReceiver i dodajemo mu 'filter'.
+     * Filter koristimo prilikom prispeca poruka. Jedan receiver
+     * moze da reaguje na vise tipova poruka. One nam kazu
+     * sta tacno treba da se desi kada poruka odredjenog tipa (filera)
+     * stigne.
+     * */
+    private void setUpReceiver(){
+        sync = new SimpleReceiver();
+
+        //registracija filtera(ovo je jedan, svaki mora da se registruje za sebe ako ih ima više)
+        IntentFilter filter = new IntentFilter();
+        filter.addAction("SYNC_DATA");
+        filter.addAction("MY_COMMENT");
+        registerReceiver(sync, filter);
+    }
+    /**
+     * Kada zelimo da se odredjeni zadaci ponavljaju, potrebno je
+     * da registrujemo manager koji ce motriti kada je vreme da se
+     * taj posao obavi. Kada registruje vreme za pokretanje zadatka
+     * on emituje Intent operativnom sistemu sta je potrebno da se
+     * desi.
+     * Takodje potrebno je da definisemo ponavljanja tj. na koliko
+     * vremena zelimo da se posao ponovo obavi
+     * */
+    private void setUpManager(){
+        //Intent koji ce manager emitovati operativnom sistemu
+        //Startujemo jedan servis
+        Intent intent = new Intent(this, SimpleService.class);
+        int status = ReviewerTools.getConnectivityStatus(getApplicationContext());
+        intent.putExtra("STATUS", status);
+
+        //definisemo manager i kazemo kada je potrebno da se ponavlja
+        PendingIntent pintent = PendingIntent.getService(this,0, intent, 0 );
+
+        //koristicemo sistemski AlarmManager pa je potrebno da dobijemo
+        //njegovu instancu.
+        AlarmManager alarm = (AlarmManager)getSystemService(Context.ALARM_SERVICE);
+
+        //definisemo kako ce alarm manager da reaguje.
+        //prvi parametar kaze da ce reagovati u rezimu ponavljanja
+        //drugi parametar od kada krece da meri vreme
+        //treci parametar na koliko jedinica vremena ce reagovati (minimalno 1min)
+        //poslednji parametar nam govori koju akciju treba da preduzmemo kada se alarm iskljuci
+        alarm.setRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis(), ReviewerTools.calculateTimeTillNextSync(1), pintent);
+
+        Toast.makeText(this, "Alarm Set", Toast.LENGTH_SHORT).show();
+    }
+    /**
+     * Moramo voditi racuna o komponentama koje je potrebno osloboditi
+     * kada aplikacija nije aktivna.
+     * */
+    @Override
+    protected void onPause(){
+        //ako je manager kreiran potrebno je da ga uklonimo
+        if (manager != null){
+            manager.cancel(pendingIntent);
+            manager = null;
+        }
+        //osloboditi resurse koje koristi receiver
+        if (sync != null){
+            unregisterReceiver(sync);
+            sync = null;
+        }
+
+        super.onPause();
+    }
+
+
 
 }
