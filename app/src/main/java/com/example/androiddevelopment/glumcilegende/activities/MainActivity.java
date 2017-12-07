@@ -1,5 +1,7 @@
 package com.example.androiddevelopment.glumcilegende.activities;
 
+import android.Manifest;
+import android.app.Activity;
 import android.app.AlarmManager;
 import android.app.Dialog;
 import android.app.FragmentTransaction;
@@ -7,14 +9,20 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.content.res.Configuration;
+import android.os.Build;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -27,6 +35,7 @@ import android.widget.Toast;
 
 
 import java.util.ArrayList;
+import java.util.Date;
 
 import com.example.androiddevelopment.glumcilegende.R;
 import com.example.androiddevelopment.glumcilegende.adapters.DrawerListAdapter;
@@ -44,6 +53,8 @@ import com.example.androiddevelopment.glumcilegende.tools.ReviewerTools;
 
 // Each activity extends Activity class or AppCompatActivity class
 public class MainActivity extends AppCompatActivity implements OnProductSelectedListener {
+
+    private static final String TAG = "PERMISSIONS";
 
     // The click listner for ListView in the navigation drawer
      /*
@@ -84,6 +95,10 @@ public class MainActivity extends AppCompatActivity implements OnProductSelected
     private SimpleReceiver sync;
     private PendingIntent pendingIntent;
     private AlarmManager manager;
+
+    private SharedPreferences sharedPreferences;
+    private String synctime;
+    private boolean allowSync;
 
     // onCreate method is a lifecycle method called when he activity is starting
     @Override
@@ -216,6 +231,52 @@ public class MainActivity extends AppCompatActivity implements OnProductSelected
         return super.onCreateOptionsMenu(menu);
     }
 
+    /**
+     * Od verzije Marshmallow Android uvodi pojam dinamickih permisija
+     * Sto korisnicima olaksava rad, a programerima uvodi dodadan posao.
+     * Cela ideja ja u tome, da se permisije ili prava da aplikcija
+     * nesto uradi, ne zahtevaju prilikom instalacije, nego prilikom
+     * prve upotrebe te funkcionalnosti. To za posledicu ima da mi
+     * svaki put moramo da proverimo da li je odredjeno pravo dopusteno
+     * ili ne. I ako nije da ponovo trazimo da korisnik dopusti, u protivnom
+     * tu funkcionalnost necemo obaviti uopste.
+     * */
+    public boolean isStoragePermissionGranted(){
+        if (Build.VERSION.SDK_INT >= 23){
+            if (checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                    == PackageManager.PERMISSION_GRANTED &&
+                    checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE)
+                    == PackageManager.PERMISSION_GRANTED){
+                Log.v(TAG, "Permission is granted");
+                return true;
+            }else {
+                Log.v(TAG, "Permission is revoked");
+                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                Manifest.permission.READ_EXTERNAL_STORAGE}, 1);
+                return false;
+            }
+        }
+        else { //permission is automatically granted on sdk<23 upon installation
+            Log.v(TAG, "permission is granted");
+            return true;
+        }
+    }
+    /**
+     *
+     * Ako odredjena funkcija nije dopustena, saljemo zahtev android
+     * sistemu da zahteva odredjene permisije. Korisniku se prikazuje
+     * dialog u kom on zeli ili ne da dopusti odedjene permisije.
+     */
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults){
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (grantResults[0] == PackageManager.PERMISSION_GRANTED &&
+                grantResults[1] == PackageManager.PERMISSION_GRANTED){
+            Log.v(TAG, "Permission: " + permissions[0] + "was " + grantResults[0]);
+        }
+    }
+
+
     // onOptionsItemSelected method is called whenever an item in the Toolbar is selected.
     /**
      *Metoda koja je zaduzena za rekaciju tj dogadjaj kada se klikne na neki
@@ -231,62 +292,30 @@ public class MainActivity extends AppCompatActivity implements OnProductSelected
      */
     @Override
     public boolean onOptionsItemSelected(MenuItem item){
-        switch (item.getItemId()){
+        switch (item.getItemId()) {
             case R.id.action_refresh:
-                Toast.makeText(MainActivity.this, "Sinhronizacija dugo traje koristite servis. dobro :)",Toast.LENGTH_SHORT).show();
-
-               int status = ReviewerTools.getConnectivityStatus(getApplicationContext());
-
-               Intent intent = new Intent(MainActivity.this, SimpleService.class);
-               intent.putExtra("STATUS", status);
-
-               startService(intent);
+                // Toast.makeText(MainActivity.this, "Sinhronizacija dugo traje koristite servis. dobro :)",Toast.LENGTH_SHORT).show();
+                if (isStoragePermissionGranted()) {
+                    String text = ReviewerTools.readFF(this, "myfile.txt");
+                    Toast.makeText(this, text, Toast.LENGTH_SHORT).show();
+                }
                 break;
             case R.id.action_add:
-                //kreiramo dijalog
-                final Dialog dialog = new Dialog(MainActivity.this);
-
-                //dodajemo layout koji smo prethodno definisali
-                dialog.setContentView(R.layout.dialog_layout);
-
-                //dodajemo naslov dijalogu
-                dialog.setTitle("Comment dialog");
-
-                //na klik OK dugmeta preuzimamo sadrzaj tekstualnih polja i saljemo servisu
-                Button ok = (Button) dialog.findViewById(R.id.ok);
-                ok.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        EditText editTitle = (EditText) dialog.findViewById(R.id.title);
-                        EditText editComment = (EditText) dialog.findViewById(R.id.comment);
-
-                        Intent commentIntent = new Intent(MainActivity.this, CommentService.class);
-                        commentIntent.putExtra("title", editTitle.getText().toString());
-                        commentIntent.putExtra("comment", editComment.getText().toString());
-                        startService(commentIntent);
-                        dialog.dismiss();
+                if (isStoragePermissionGranted()) {
+                    ReviewerTools.writeTF(new Date().toString(), this, "myfile.txt");
+                    break;
+                }
+            case R.id.test:
+                if (isStoragePermissionGranted()) {
+                    if (ReviewerTools.isFileExists(MainActivity.this, "myfile.txt")) {
+                        Toast.makeText(this, "File exist", Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(this, "File don't exist", Toast.LENGTH_SHORT).show();
                     }
-                });
-
-                //na klik cancel dugmenta samo ispisemo toast poruku
-                Button cancel = (Button) dialog.findViewById(R.id.cancel);
-                cancel.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        Toast.makeText(MainActivity.this, "No comment", Toast.LENGTH_SHORT).show();
-                    }
-                });
-
-                //prikazemo dijalog
-                dialog.show();
-               /* try {
-                    Toast.makeText(MainActivity.this, "Sinhronizacija pokrenuta u glavnoj niti. Nije dobro :(", Toast.LENGTH_SHORT).show();
-                    Thread.sleep(6000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                } */
+                }
                 break;
         }
+
         return super.onOptionsItemSelected(item);
     }
 
@@ -415,8 +444,11 @@ public class MainActivity extends AppCompatActivity implements OnProductSelected
         //registracija filtera(ovo je jedan, svaki mora da se registruje za sebe ako ih ima više)
         IntentFilter filter = new IntentFilter();
         filter.addAction("SYNC_DATA");
-        filter.addAction("MY_COMMENT");
         registerReceiver(sync, filter);
+
+        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+
+        consultPreferences();
     }
     /**
      * Kada zelimo da se odredjeni zadaci ponavljaju, potrebno je
@@ -434,21 +466,30 @@ public class MainActivity extends AppCompatActivity implements OnProductSelected
         int status = ReviewerTools.getConnectivityStatus(getApplicationContext());
         intent.putExtra("STATUS", status);
 
-        //definisemo manager i kazemo kada je potrebno da se ponavlja
-        PendingIntent pintent = PendingIntent.getService(this,0, intent, 0 );
+        if (allowSync) {
+            //definisemo manager i kazemo kada je potrebno da se ponavlja
+            PendingIntent pintent = PendingIntent.getService(this, 0, intent, 0);
 
-        //koristicemo sistemski AlarmManager pa je potrebno da dobijemo
-        //njegovu instancu.
-        AlarmManager alarm = (AlarmManager)getSystemService(Context.ALARM_SERVICE);
+            //koristicemo sistemski AlarmManager pa je potrebno da dobijemo
+            //njegovu instancu.
+            AlarmManager alarm = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
 
-        //definisemo kako ce alarm manager da reaguje.
-        //prvi parametar kaze da ce reagovati u rezimu ponavljanja
-        //drugi parametar od kada krece da meri vreme
-        //treci parametar na koliko jedinica vremena ce reagovati (minimalno 1min)
-        //poslednji parametar nam govori koju akciju treba da preduzmemo kada se alarm iskljuci
-        alarm.setRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis(), ReviewerTools.calculateTimeTillNextSync(1), pintent);
+            //definisemo kako ce alarm manager da reaguje.
+            //prvi parametar kaze da ce reagovati u rezimu ponavljanja
+            //drugi parametar od kada krece da meri vreme
+            //treci parametar na koliko jedinica vremena ce reagovati (minimalno 1min)
+            //poslednji parametar nam govori koju akciju treba da preduzmemo kada se alarm iskljuci
+            alarm.setRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis(),
+                    ReviewerTools.calculateTimeTillNextSync(Integer.parseInt(synctime)),
+                    pintent);
 
-        Toast.makeText(this, "Alarm Set", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Alarm Set", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void consultPreferences(){
+        synctime = sharedPreferences.getString(getString(R.string.pref_sync_list), "1"); //1 minut
+        allowSync = sharedPreferences.getBoolean(getString(R.string.pref_sync), false);
     }
     /**
      * Moramo voditi racuna o komponentama koje je potrebno osloboditi

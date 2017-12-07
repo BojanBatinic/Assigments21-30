@@ -14,6 +14,13 @@
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
 
+    <!--
+    Posto zelimo da pisemo odnosno citamo iz skladista podataka moramo traziti i
+    odredjena dopustenja od strane operativnog sistema
+    -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+
     <application
         android:label="@string/app_name"
         android:theme="@style/AppTheme">
@@ -56,7 +63,7 @@
         Ovo je obavezno, bez definicije servis-a necemo moci ni da ga koristimo.
         -->
         <service android:name="com.example.androiddevelopment.glumcilegende.async.CommentService"/>
-        
+
     </application>
 
 </manifest>

@@ -37,7 +37,7 @@ public class ListFragment extends Fragment {
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
 
-        //Loads glumce from array resource
+     /*   //Loads glumce from array resource
         String[] glumci = getResources().getStringArray(R.array.glumci);
 
         //creates an ArrayAdapter from the array of String
@@ -53,7 +53,7 @@ public class ListFragment extends Fragment {
                 //Send the URL to the host activity
                 listener.onProductSelected((int)id);
             }
-        });
+        }); */
 
     }
 
@@ -85,12 +85,12 @@ public class ListFragment extends Fragment {
     public void onAttach(Activity activity) {
         super.onAttach(activity);
 
-        //shows a toast messsage (a pop-up message)
+     /*   //shows a toast messsage (a pop-up message)
         try {
             listener = (OnProductSelectedListener) activity;
         } catch (ClassCastException e){
             throw new ClassCastException(activity.toString() + " must implement OnItemSelectedListener");
-        }
+        }*/
     }
 
   }
