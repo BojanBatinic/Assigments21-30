@@ -27,15 +27,20 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
+import android.widget.Spinner;
 import android.widget.Toast;
 
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
+import java.util.Locale;
 
 import com.example.androiddevelopment.glumcilegende.R;
 import com.example.androiddevelopment.glumcilegende.adapters.DrawerListAdapter;
@@ -43,6 +48,9 @@ import com.example.androiddevelopment.glumcilegende.async.CommentService;
 import com.example.androiddevelopment.glumcilegende.async.CommentTask;
 import com.example.androiddevelopment.glumcilegende.async.SimpleReceiver;
 import com.example.androiddevelopment.glumcilegende.async.SimpleService;
+import com.example.androiddevelopment.glumcilegende.db.DatabaseHelper;
+import com.example.androiddevelopment.glumcilegende.db.model.Film;
+import com.example.androiddevelopment.glumcilegende.db.model.Glumac;
 import com.example.androiddevelopment.glumcilegende.dialogs.AboutDialog;
 import com.example.androiddevelopment.glumcilegende.fragments.DetailFragment;
 import com.example.androiddevelopment.glumcilegende.fragments.ListFragment;
@@ -50,11 +58,12 @@ import com.example.androiddevelopment.glumcilegende.fragments.ListFragment.OnPro
 import com.example.androiddevelopment.glumcilegende.model.NavigationItem;
 import com.example.androiddevelopment.glumcilegende.async.SimpleSyncTask;
 import com.example.androiddevelopment.glumcilegende.tools.ReviewerTools;
+import com.j256.ormlite.android.apptools.OpenHelperManager;
 
 // Each activity extends Activity class or AppCompatActivity class
 public class MainActivity extends AppCompatActivity implements OnProductSelectedListener {
 
-    private static final String TAG = "PERMISSIONS";
+  //  private static final String TAG = "PERMISSIONS";
 
     // The click listner for ListView in the navigation drawer
      /*
@@ -90,15 +99,17 @@ public class MainActivity extends AppCompatActivity implements OnProductSelected
     private boolean listShown = false; // Is the ListFragment fragment shown?
     private boolean detailShown = false; // Is the DetailFragment fragment shown?
 
-    private int productId = 0; // selected item id
+    private int glumacId = 0; // selected item id
 
-    private SimpleReceiver sync;
+    private DatabaseHelper databaseHelper;
+
+   /* private SimpleReceiver sync;
     private PendingIntent pendingIntent;
     private AlarmManager manager;
 
     private SharedPreferences sharedPreferences;
     private String synctime;
-    private boolean allowSync;
+    private boolean allowSync; */
 
     // onCreate method is a lifecycle method called when he activity is starting
     @Override
@@ -217,8 +228,105 @@ public class MainActivity extends AppCompatActivity implements OnProductSelected
 
         listShown = true;
         detailShown = false;
-        productId = 0;
+        glumacId = 0;
+
+        addInitFilm();
     }
+
+    private void addInitFilm(){
+        try {
+            if (getDatabaseHelper().getFilmDao().queryForAll().size() == 0){
+                Film partizanski = new Film();
+                partizanski.setName("Partizanski");
+
+                Film mangupski = new Film();
+                mangupski.setName("Mangupski");
+
+                Film komedija = new Film();
+                komedija.setName("Komedija");
+
+                getDatabaseHelper().getFilmDao().create(partizanski);
+                getDatabaseHelper().getFilmDao().create(mangupski);
+                getDatabaseHelper().getFilmDao().create(komedija);
+            }
+        }catch (SQLException e){
+            e.printStackTrace();
+        }
+    }
+
+    //da bi dodali podatak u bazu, potrebno je da napravimo objekat klase
+    //koji reprezentuje tabelu i popunimo podacima
+    private void addItem() throws SQLException {
+        final Dialog dialog = new Dialog(this);
+        dialog.setContentView(R.layout.dialog_layout);
+
+        final Spinner imagesSpinner = (Spinner) dialog.findViewById(R.id.glumac_image);
+        List<String> imagesList = new ArrayList<String>();
+        imagesList.add("velimir.jpg");
+        imagesList.add("dragan.jpg");
+        imagesList.add("zoran.jpg");
+        ArrayAdapter<String> imagesAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, imagesList);
+        imagesSpinner.setAdapter(imagesAdapter);
+        imagesSpinner.setSelection(0);
+
+        final Spinner glumacSpinner = (Spinner) dialog.findViewById(R.id.glumac_film);
+        List<Film> list = getDatabaseHelper().getFilmDao().queryForAll();
+        ArrayAdapter<Film> dataAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, list);
+        glumacSpinner.setAdapter(dataAdapter);
+        glumacSpinner.setSelection(0);
+
+        final EditText glumacName = (EditText) dialog.findViewById(R.id.glumac_name);
+        final EditText glumacBiog = (EditText) dialog.findViewById(R.id.glumac_biografija);
+        final EditText glumacRating = (EditText) dialog.findViewById(R.id.glumac_rating);
+
+        Button ok = (Button) dialog.findViewById(R.id.ok);
+        ok.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                try {
+                    String name = glumacName.getText().toString();
+                    String biog = glumacBiog.getText().toString();
+                    //Voditi racuna kada radimo sa brojevima. Ono sto unesemo mora biti broj
+                    //da bi formater uspeo ispravno da formatira broj. Dakle ono sto unesemo
+                    //bice u teksutalnom obliku, i mora biti moguce pretrovirit u broj.
+                    //Ako nije moguce pretvoriti u broj dobicemo NumberFormatException
+                    //Zato je dobro za input gde ocekujemo da stavimo broj, stavimo u xml-u
+                    //da ce tu biti samo unet broj npr android:inputType="number|numberDecimal"
+                    float zvezdice = Float.parseFloat(glumacRating.getText().toString());
+
+                    Film film = (Film) glumacSpinner.getSelectedItem();
+                    String image = (String) imagesSpinner.getSelectedItem();
+
+                    Glumac glumac = new Glumac();
+                    glumac.setmName(name);
+                    glumac.setBiografija(biog);
+                    glumac.setRating(zvezdice);
+                    glumac.setImage(image);
+                    glumac.setFilm(film);
+
+                    getDatabaseHelper().getGlumacDao().create(glumac);
+                    refresh();
+                    Toast.makeText(MainActivity.this, "Glumac dodat", Toast.LENGTH_SHORT).show();
+                    dialog.dismiss();
+
+                }catch (NumberFormatException e){
+                    Toast.makeText(MainActivity.this, "Rating mora biti broj", Toast.LENGTH_SHORT).show();
+                }catch (SQLException e){
+                    e.printStackTrace();
+                }
+            }
+        });
+        Button cancel = (Button) dialog.findViewById(R.id.cancel);
+        cancel.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dialog.dismiss();
+            }
+        });
+
+        dialog.show();
+    }
+
     /**Toolbar**/
     /**
      *Ova metoda 'ubacuje' sadrzaj 'R.menu.activity_item_detail' fajla unutar toolbar-a
@@ -241,7 +349,7 @@ public class MainActivity extends AppCompatActivity implements OnProductSelected
      * ili ne. I ako nije da ponovo trazimo da korisnik dopusti, u protivnom
      * tu funkcionalnost necemo obaviti uopste.
      * */
-    public boolean isStoragePermissionGranted(){
+  /*  public boolean isStoragePermissionGranted(){
         if (Build.VERSION.SDK_INT >= 23){
             if (checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)
                     == PackageManager.PERMISSION_GRANTED &&
@@ -260,21 +368,21 @@ public class MainActivity extends AppCompatActivity implements OnProductSelected
             Log.v(TAG, "permission is granted");
             return true;
         }
-    }
+    } */
     /**
      *
      * Ako odredjena funkcija nije dopustena, saljemo zahtev android
      * sistemu da zahteva odredjene permisije. Korisniku se prikazuje
      * dialog u kom on zeli ili ne da dopusti odedjene permisije.
      */
-    @Override
+  /*  @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults){
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (grantResults[0] == PackageManager.PERMISSION_GRANTED &&
                 grantResults[1] == PackageManager.PERMISSION_GRANTED){
             Log.v(TAG, "Permission: " + permissions[0] + "was " + grantResults[0]);
         }
-    }
+    } */
 
 
     // onOptionsItemSelected method is called whenever an item in the Toolbar is selected.
@@ -295,17 +403,24 @@ public class MainActivity extends AppCompatActivity implements OnProductSelected
         switch (item.getItemId()) {
             case R.id.action_refresh:
                 // Toast.makeText(MainActivity.this, "Sinhronizacija dugo traje koristite servis. dobro :)",Toast.LENGTH_SHORT).show();
-                if (isStoragePermissionGranted()) {
+             /*   if (isStoragePermissionGranted()) {
                     String text = ReviewerTools.readFF(this, "myfile.txt");
                     Toast.makeText(this, text, Toast.LENGTH_SHORT).show();
-                }
+                } */
+                refresh();
                 break;
             case R.id.action_add:
-                if (isStoragePermissionGranted()) {
-                    ReviewerTools.writeTF(new Date().toString(), this, "myfile.txt");
-                    break;
+              /*  if (isStoragePermissionGranted()) {
+                    ReviewerTools.writeTF(new Date().toString(), this, "myfile.txt"); */
+                try {
+                    addItem();
+                }catch (SQLException e){
+                    e.printStackTrace();
                 }
-            case R.id.test:
+
+                    break;
+               // }
+           /* case R.id.test:
                 if (isStoragePermissionGranted()) {
                     if (ReviewerTools.isFileExists(MainActivity.this, "myfile.txt")) {
                         Toast.makeText(this, "File exist", Toast.LENGTH_SHORT).show();
@@ -313,10 +428,31 @@ public class MainActivity extends AppCompatActivity implements OnProductSelected
                         Toast.makeText(this, "File don't exist", Toast.LENGTH_SHORT).show();
                     }
                 }
-                break;
+                break;*/
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    // refresh() prikazuje novi sadrzaj.Povucemo nov sadrzaj iz baze i popunimo listu
+    private void refresh(){
+        ListView listview = (ListView) findViewById(R.id.glumci);
+
+        if (listview != null){
+            ArrayAdapter<Glumac> adapter = (ArrayAdapter<Glumac>) listview.getAdapter();
+
+            if (adapter != null){
+                try {
+                    adapter.clear();
+                    List<Glumac> list = getDatabaseHelper().getGlumacDao().queryForAll();
+                    adapter.addAll(list);
+                    adapter.notifyDataSetChanged();
+                }catch (SQLException e){
+                    e.printStackTrace();
+                }
+            }
+
+        }
     }
 
     // Overrides setTitle method to support older api levels
@@ -379,16 +515,20 @@ public class MainActivity extends AppCompatActivity implements OnProductSelected
     }
 
     @Override
-    public void onProductSelected(int id){
+    public void onProductSelected(int id) {
 
-        productId = id;
+        glumacId = id;
 
-        if(landscapeMode) {
+        try {
+
+        Glumac glumac = getDatabaseHelper().getGlumacDao().queryForId(id);
+
+        if (landscapeMode) {
             DetailFragment detailFragment = (DetailFragment) getFragmentManager().findFragmentById(R.id.displayDetail);
-            detailFragment.updateProduct(id);
+            detailFragment.updateGlumac(glumac);
         } else {
             DetailFragment detailFragment = new DetailFragment();
-            detailFragment.setGlumac(id);
+            detailFragment.setGlumac(glumac);
             FragmentTransaction ft = getFragmentManager().beginTransaction();
             ft.replace(R.id.displayList, detailFragment, "Detail_Fragment2");
             ft.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE);
@@ -398,6 +538,10 @@ public class MainActivity extends AppCompatActivity implements OnProductSelected
             detailShown = true;
 
         }
+    } catch (SQLException e){
+            e.printStackTrace();
+        }
+
     }
 
     @Override
@@ -418,19 +562,27 @@ public class MainActivity extends AppCompatActivity implements OnProductSelected
         }
     }
 
+    //Metoda za komunikaciju sa bazom podataka
+    public DatabaseHelper getDatabaseHelper(){
+        if (databaseHelper == null){
+            databaseHelper = OpenHelperManager.getHelper(this, DatabaseHelper.class);
+        }
+        return databaseHelper;
+    }
+
     /**
      * Prilikom startovanja aplikacije potrebno je registrovati
      * elemente sa kojimaa radimo. Kada aplikaciaj nije aktivna
      * te elemente moramo da uklnimo.
      */
-    @Override
+  /*  @Override
     protected void onResume() {
 
         super.onResume();
 
         setUpReceiver();
         setUpManager();
-    }
+    } */
     /**
      * Registrujemo nas BroadcastReceiver i dodajemo mu 'filter'.
      * Filter koristimo prilikom prispeca poruka. Jedan receiver
@@ -438,7 +590,7 @@ public class MainActivity extends AppCompatActivity implements OnProductSelected
      * sta tacno treba da se desi kada poruka odredjenog tipa (filera)
      * stigne.
      * */
-    private void setUpReceiver(){
+  /*  private void setUpReceiver(){
         sync = new SimpleReceiver();
 
         //registracija filtera(ovo je jedan, svaki mora da se registruje za sebe ako ih ima više)
@@ -449,7 +601,7 @@ public class MainActivity extends AppCompatActivity implements OnProductSelected
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 
         consultPreferences();
-    }
+    } */
     /**
      * Kada zelimo da se odredjeni zadaci ponavljaju, potrebno je
      * da registrujemo manager koji ce motriti kada je vreme da se
@@ -459,7 +611,7 @@ public class MainActivity extends AppCompatActivity implements OnProductSelected
      * Takodje potrebno je da definisemo ponavljanja tj. na koliko
      * vremena zelimo da se posao ponovo obavi
      * */
-    private void setUpManager(){
+   /* private void setUpManager(){
         //Intent koji ce manager emitovati operativnom sistemu
         //Startujemo jedan servis
         Intent intent = new Intent(this, SimpleService.class);
@@ -485,17 +637,17 @@ public class MainActivity extends AppCompatActivity implements OnProductSelected
 
             Toast.makeText(this, "Alarm Set", Toast.LENGTH_SHORT).show();
         }
-    }
+    } */
 
-    private void consultPreferences(){
+  /*  private void consultPreferences(){
         synctime = sharedPreferences.getString(getString(R.string.pref_sync_list), "1"); //1 minut
         allowSync = sharedPreferences.getBoolean(getString(R.string.pref_sync), false);
-    }
+    } */
     /**
      * Moramo voditi racuna o komponentama koje je potrebno osloboditi
      * kada aplikacija nije aktivna.
      * */
-    @Override
+ /*   @Override
     protected void onPause(){
         //ako je manager kreiran potrebno je da ga uklonimo
         if (manager != null){
@@ -509,8 +661,17 @@ public class MainActivity extends AppCompatActivity implements OnProductSelected
         }
 
         super.onPause();
+    } */
+    @Override
+    protected void onDestroy(){
+        super.onDestroy();
+        // nakon rada sa bazom podataka potrebno je obavezno
+        //osloboditi resurse!
+        if (databaseHelper != null){
+            OpenHelperManager.releaseHelper();
+            databaseHelper = null;
+        }
     }
-
 
 
 }

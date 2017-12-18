@@ -44,25 +44,26 @@
             android:icon="@mipmap/ic_launcher"
             android:label="@string/activity_settings_name"
             android:theme="@style/AppTheme.NoActionBar"
-            android:parentActivityName="com.example.androiddevelopment.glumcilegende.activities.MainActivity" />
+            android:parentActivityName="com.example.androiddevelopment.glumcilegende.activities.MainActivity">
+        </activity>
 
         <!--
         Moramo definisati punu putanju do naseg servis-a.
         Ovo je obavezno, bez definicije servis-a necemo moci ni da ga koristimo.
         -->
-        <service android:name="com.example.androiddevelopment.glumcilegende.async.SimpleService"/>
+      <!--  <service android:name="com.example.androiddevelopment.glumcilegende.async.SimpleService"/>-->
 
         <!--
         Moramo definisati punu putanju do naseg receiver-a.
         Ovo je obavezno, bez definicije receiver-a necemo moci ni da ga koristimo.
         -->
-        <receiver android:name="com.example.androiddevelopment.glumcilegende.async.SimpleReceiver"/>
+      <!--  <receiver android:name="com.example.androiddevelopment.glumcilegende.async.SimpleReceiver"/> -->
 
         <!--
         Moramo definisati punu putanju do naseg servis-a.
         Ovo je obavezno, bez definicije servis-a necemo moci ni da ga koristimo.
         -->
-        <service android:name="com.example.androiddevelopment.glumcilegende.async.CommentService"/>
+       <!-- <service android:name="com.example.androiddevelopment.glumcilegende.async.CommentService"/> -->
 
     </application>
 

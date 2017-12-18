@@ -9,10 +9,17 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ArrayAdapter;
+import android.widget.ListAdapter;
 import android.widget.ListView;
 
 import com.example.androiddevelopment.glumcilegende.R;
+import com.example.androiddevelopment.glumcilegende.db.DatabaseHelper;
+import com.example.androiddevelopment.glumcilegende.db.model.Glumac;
 
+import com.j256.ormlite.android.apptools.OpenHelperManager;
+
+import java.util.List;
+import java.sql.SQLException;
 
 /**
  * Created by BBLOJB on 21.11.2017..
@@ -20,11 +27,14 @@ import com.example.androiddevelopment.glumcilegende.R;
 // Each Fragment extends Fragment class
 public class ListFragment extends Fragment {
 
+    private DatabaseHelper databaseHelper;
+
     // Container Activity must implement this interface
     public interface OnProductSelectedListener {
         void onProductSelected(int id);
     }
     OnProductSelectedListener listener;
+    ListAdapter adapter;
 
     // onCreate method is a life-cycle method that is called when creating the fragment.
    @Override
@@ -37,24 +47,34 @@ public class ListFragment extends Fragment {
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
 
-     /*   //Loads glumce from array resource
-        String[] glumci = getResources().getStringArray(R.array.glumci);
+        //Loads glumce from array resource
+        // String[] glumci = getResources().getStringArray(R.array.glumci);
+        try {
+            List<Glumac> list = getDatabaseHelper().getGlumacDao().queryForAll();
 
-        //creates an ArrayAdapter from the array of String
-        ArrayAdapter<String> dataAdapter = new ArrayAdapter<String>(getActivity(), R.layout.list_item, glumci);
-        ListView listView = (ListView) getView().findViewById(R.id.glumci);
+            adapter = new ArrayAdapter<Glumac>(getActivity(), R.layout.list_item, list);
+
+            final ListView listView = (ListView)getActivity().findViewById(R.id.glumci);
 
         //assigns ArrayAdapter to ListView
-        listView.setAdapter(dataAdapter);
+        listView.setAdapter(adapter);
 
         //updates ListFragment
         listView.setOnItemClickListener(new OnItemClickListener() {
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                //Send the URL to the host activity
-                listener.onProductSelected((int)id);
-            }
-        }); */
+                // Posto radimo sa bazom podataka, svaki element ima jedinstven id
+                // pa je potrebno da vidimo na koji tacno element smo kliknuli.
+                // To mozemo uraditi tako sto izvucemo proizvod iz liste i dobijemo njegov id
 
+                Glumac g = (Glumac) listView.getItemAtPosition(position);
+
+                listener.onProductSelected(g.getmId());
+            }
+        });
+
+    } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     // onCreateView method is a life-cycle method that is called to have the fragment instantiate its user interface view.
@@ -85,12 +105,18 @@ public class ListFragment extends Fragment {
     public void onAttach(Activity activity) {
         super.onAttach(activity);
 
-     /*   //shows a toast messsage (a pop-up message)
+       //shows a toast messsage (a pop-up message)
         try {
             listener = (OnProductSelectedListener) activity;
         } catch (ClassCastException e){
             throw new ClassCastException(activity.toString() + " must implement OnItemSelectedListener");
-        }*/
+        }
     }
 
-  }
+    public DatabaseHelper getDatabaseHelper() {
+        if (databaseHelper == null){
+            databaseHelper = OpenHelperManager.getHelper(getActivity(), DatabaseHelper.class);
+        }
+        return databaseHelper;
+    }
+}
