@@ -1,28 +1,19 @@
 package com.example.androiddevelopment.glumcilegende.activities;
 
-import android.Manifest;
-import android.app.Activity;
-import android.app.AlarmManager;
 import android.app.Dialog;
 import android.app.FragmentTransaction;
-import android.app.PendingIntent;
-import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
-import android.content.SharedPreferences;
-import android.content.pm.PackageManager;
 import android.content.res.Configuration;
-import android.os.Build;
+import android.graphics.Bitmap;
+import android.net.Uri;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
-import android.support.v4.app.ActivityCompat;
+import android.provider.MediaStore;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -30,40 +21,35 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
 import android.widget.Spinner;
 import android.widget.Toast;
 
 
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
-import java.util.Locale;
 
 import com.example.androiddevelopment.glumcilegende.R;
 import com.example.androiddevelopment.glumcilegende.adapters.DrawerListAdapter;
-import com.example.androiddevelopment.glumcilegende.async.CommentService;
-import com.example.androiddevelopment.glumcilegende.async.CommentTask;
-import com.example.androiddevelopment.glumcilegende.async.SimpleReceiver;
-import com.example.androiddevelopment.glumcilegende.async.SimpleService;
 import com.example.androiddevelopment.glumcilegende.db.DatabaseHelper;
 import com.example.androiddevelopment.glumcilegende.db.model.Film;
 import com.example.androiddevelopment.glumcilegende.db.model.Glumac;
 import com.example.androiddevelopment.glumcilegende.dialogs.AboutDialog;
 import com.example.androiddevelopment.glumcilegende.fragments.DetailFragment;
 import com.example.androiddevelopment.glumcilegende.fragments.ListFragment;
-import com.example.androiddevelopment.glumcilegende.fragments.ListFragment.OnProductSelectedListener;
+import com.example.androiddevelopment.glumcilegende.fragments.ListFragment.OnGlumacSelectedListener;
 import com.example.androiddevelopment.glumcilegende.model.NavigationItem;
-import com.example.androiddevelopment.glumcilegende.async.SimpleSyncTask;
-import com.example.androiddevelopment.glumcilegende.tools.ReviewerTools;
+
 import com.j256.ormlite.android.apptools.OpenHelperManager;
 
 // Each activity extends Activity class or AppCompatActivity class
-public class MainActivity extends AppCompatActivity implements OnProductSelectedListener {
+public class MainActivity extends AppCompatActivity implements OnGlumacSelectedListener {
 
-  //  private static final String TAG = "PERMISSIONS";
+   private static final int SELECT_PICTURE = 1;
 
     // The click listner for ListView in the navigation drawer
      /*
@@ -102,14 +88,8 @@ public class MainActivity extends AppCompatActivity implements OnProductSelected
     private int glumacId = 0; // selected item id
 
     private DatabaseHelper databaseHelper;
-
-   /* private SimpleReceiver sync;
-    private PendingIntent pendingIntent;
-    private AlarmManager manager;
-
-    private SharedPreferences sharedPreferences;
-    private String synctime;
-    private boolean allowSync; */
+    private String imagePath = null;
+    private ImageView preview;
 
     // onCreate method is a lifecycle method called when he activity is starting
     @Override
@@ -229,28 +209,102 @@ public class MainActivity extends AppCompatActivity implements OnProductSelected
         listShown = true;
         detailShown = false;
         glumacId = 0;
-
-        addInitFilm();
     }
 
-    private void addInitFilm(){
-        try {
-            if (getDatabaseHelper().getFilmDao().queryForAll().size() == 0){
-                Film partizanski = new Film();
-                partizanski.setName("Partizanski");
+    private void reset(){
+        imagePath = "";
+        preview = null;
+    }
 
-                Film mangupski = new Film();
-                mangupski.setName("Mangupski");
+    private void addFilm(){
+        final Dialog dialog = new Dialog(this);
+        dialog.setContentView(R.layout.dialog_film_layout);
 
-                Film komedija = new Film();
-                komedija.setName("Komedija");
-
-                getDatabaseHelper().getFilmDao().create(partizanski);
-                getDatabaseHelper().getFilmDao().create(mangupski);
-                getDatabaseHelper().getFilmDao().create(komedija);
+        Button choosebtn = (Button) dialog.findViewById(R.id.choose);
+        choosebtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                preview = (ImageView) dialog.findViewById(R.id.preview_image);
+                selectPicture();
             }
-        }catch (SQLException e){
-            e.printStackTrace();
+        });
+
+        final EditText glumacName = (EditText) dialog.findViewById(R.id.glumac_name);
+
+        Button ok = (Button) dialog.findViewById(R.id.ok);
+        ok.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String name = glumacName.getText().toString();
+
+                if(preview == null || imagePath == null){
+                    Toast.makeText(MainActivity.this, "Morate izabrati sliku", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                if (name.isEmpty()){
+                    Toast.makeText(MainActivity.this, "Morate uneti naziv filma", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                Film film = new Film();
+                film.setName(name);
+                film.setImage(imagePath);
+
+                try{
+                    getDatabaseHelper().getFilmDao().create(film);
+                    refresh();
+                    Toast.makeText(MainActivity.this, "Film dodat", Toast.LENGTH_SHORT).show();
+                    dialog.dismiss();
+
+                    reset();
+                }catch (SQLException e){
+                    e.printStackTrace();
+                }
+            }
+        });
+
+        Button cancel = (Button) dialog.findViewById(R.id.cancel);
+        cancel.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dialog.dismiss();
+            }
+        });
+        dialog.show();
+    }
+
+    private void selectPicture(){
+        Intent intent = new Intent();
+        intent.setType("image/*");
+        intent.setAction(Intent.ACTION_GET_CONTENT);
+        startActivityForResult(Intent.createChooser(intent, "Izaberite fotograiju"), SELECT_PICTURE);
+    }
+
+    /**
+     * Sistematska metoda koja se automatski poziva ako se
+     * aktivnost startuje u startActivityForResult rezimu
+     *
+     * Ako je to slucaj i ako je sve proslo ok, mozemo da izvucemo
+     * sadrzaj i isti prikazemo. Rezultat NIJE slika nego URI do te slike.
+     * Na osnovu toga mozemo dobiti tacnu putanju do slike ali i samu sliku
+     * */
+    public void onActivityResult(int requestCode, int resultCode, Intent data){
+        if (resultCode == RESULT_OK){
+            if (requestCode == SELECT_PICTURE){
+                Uri selectedImageUri = data.getData();
+
+                try{
+                    Bitmap bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), selectedImageUri);
+                    if(selectedImageUri != null){
+                        imagePath = selectedImageUri.toString();
+                    }
+                    if (preview != null){
+                        preview.setImageBitmap(bitmap);
+                    }
+                }catch (IOException e){
+                    e.printStackTrace();
+                }
+            }
         }
     }
 
@@ -260,20 +314,20 @@ public class MainActivity extends AppCompatActivity implements OnProductSelected
         final Dialog dialog = new Dialog(this);
         dialog.setContentView(R.layout.dialog_layout);
 
-        final Spinner imagesSpinner = (Spinner) dialog.findViewById(R.id.glumac_image);
-        List<String> imagesList = new ArrayList<String>();
-        imagesList.add("velimir.jpg");
-        imagesList.add("dragan.jpg");
-        imagesList.add("zoran.jpg");
-        ArrayAdapter<String> imagesAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, imagesList);
-        imagesSpinner.setAdapter(imagesAdapter);
-        imagesSpinner.setSelection(0);
+       Button choosebtn = (Button) dialog.findViewById(R.id.choose);
+       choosebtn.setOnClickListener(new View.OnClickListener() {
+           @Override
+           public void onClick(View v) {
+               preview = (ImageView) dialog.findViewById(R.id.preview_image);
+               selectPicture();
+           }
+       });
 
-        final Spinner glumacSpinner = (Spinner) dialog.findViewById(R.id.glumac_film);
+        final Spinner glumaciSpinner = (Spinner) dialog.findViewById(R.id.glumac_film);
         List<Film> list = getDatabaseHelper().getFilmDao().queryForAll();
         ArrayAdapter<Film> dataAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, list);
-        glumacSpinner.setAdapter(dataAdapter);
-        glumacSpinner.setSelection(0);
+        glumaciSpinner.setAdapter(dataAdapter);
+        glumaciSpinner.setSelection(0);
 
         final EditText glumacName = (EditText) dialog.findViewById(R.id.glumac_name);
         final EditText glumacBiog = (EditText) dialog.findViewById(R.id.glumac_biografija);
@@ -294,14 +348,33 @@ public class MainActivity extends AppCompatActivity implements OnProductSelected
                     //da ce tu biti samo unet broj npr android:inputType="number|numberDecimal"
                     float zvezdice = Float.parseFloat(glumacRating.getText().toString());
 
-                    Film film = (Film) glumacSpinner.getSelectedItem();
-                    String image = (String) imagesSpinner.getSelectedItem();
+                    Film film = (Film) glumaciSpinner.getSelectedItem();
+
+                    if (name.isEmpty()){
+                        Toast.makeText(MainActivity.this, "Morate uneti ime i prezime glumca", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    if (biog.isEmpty()){
+                        Toast.makeText(MainActivity.this, "Moarte uneti osnovnu biografiju glumca", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    if (film == null){
+                        Toast.makeText(MainActivity.this, "Morate izabrati zanr filma", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    if (preview == null || imagePath == null){
+                        Toast.makeText(MainActivity.this, "Morate izabrati fotografiju", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
 
                     Glumac glumac = new Glumac();
                     glumac.setmName(name);
                     glumac.setBiografija(biog);
                     glumac.setRating(zvezdice);
-                    glumac.setImage(image);
+                    glumac.setImage(imagePath);
                     glumac.setFilm(film);
 
                     getDatabaseHelper().getGlumacDao().create(glumac);
@@ -309,13 +382,18 @@ public class MainActivity extends AppCompatActivity implements OnProductSelected
                     Toast.makeText(MainActivity.this, "Glumac dodat", Toast.LENGTH_SHORT).show();
                     dialog.dismiss();
 
-                }catch (NumberFormatException e){
-                    Toast.makeText(MainActivity.this, "Rating mora biti broj", Toast.LENGTH_SHORT).show();
+                    reset();
+
                 }catch (SQLException e){
                     e.printStackTrace();
+
+                }catch (NumberFormatException e){
+                    Toast.makeText(MainActivity.this, "Rating mora biti broj", Toast.LENGTH_SHORT).show();
+
                 }
             }
         });
+
         Button cancel = (Button) dialog.findViewById(R.id.cancel);
         cancel.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -323,6 +401,11 @@ public class MainActivity extends AppCompatActivity implements OnProductSelected
                 dialog.dismiss();
             }
         });
+
+        if (dataAdapter.isEmpty()){
+            Toast.makeText(MainActivity.this, "Ne postoji ni jedan unet film, molim Vas da prvo unesete film.", Toast.LENGTH_SHORT).show();
+
+        }
 
         dialog.show();
     }
@@ -338,51 +421,6 @@ public class MainActivity extends AppCompatActivity implements OnProductSelected
         getMenuInflater().inflate(R.menu.activity_item_detail, menu);
         return super.onCreateOptionsMenu(menu);
     }
-
-    /**
-     * Od verzije Marshmallow Android uvodi pojam dinamickih permisija
-     * Sto korisnicima olaksava rad, a programerima uvodi dodadan posao.
-     * Cela ideja ja u tome, da se permisije ili prava da aplikcija
-     * nesto uradi, ne zahtevaju prilikom instalacije, nego prilikom
-     * prve upotrebe te funkcionalnosti. To za posledicu ima da mi
-     * svaki put moramo da proverimo da li je odredjeno pravo dopusteno
-     * ili ne. I ako nije da ponovo trazimo da korisnik dopusti, u protivnom
-     * tu funkcionalnost necemo obaviti uopste.
-     * */
-  /*  public boolean isStoragePermissionGranted(){
-        if (Build.VERSION.SDK_INT >= 23){
-            if (checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                    == PackageManager.PERMISSION_GRANTED &&
-                    checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE)
-                    == PackageManager.PERMISSION_GRANTED){
-                Log.v(TAG, "Permission is granted");
-                return true;
-            }else {
-                Log.v(TAG, "Permission is revoked");
-                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE,
-                Manifest.permission.READ_EXTERNAL_STORAGE}, 1);
-                return false;
-            }
-        }
-        else { //permission is automatically granted on sdk<23 upon installation
-            Log.v(TAG, "permission is granted");
-            return true;
-        }
-    } */
-    /**
-     *
-     * Ako odredjena funkcija nije dopustena, saljemo zahtev android
-     * sistemu da zahteva odredjene permisije. Korisniku se prikazuje
-     * dialog u kom on zeli ili ne da dopusti odedjene permisije.
-     */
-  /*  @Override
-    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults){
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (grantResults[0] == PackageManager.PERMISSION_GRANTED &&
-                grantResults[1] == PackageManager.PERMISSION_GRANTED){
-            Log.v(TAG, "Permission: " + permissions[0] + "was " + grantResults[0]);
-        }
-    } */
 
 
     // onOptionsItemSelected method is called whenever an item in the Toolbar is selected.
@@ -402,33 +440,18 @@ public class MainActivity extends AppCompatActivity implements OnProductSelected
     public boolean onOptionsItemSelected(MenuItem item){
         switch (item.getItemId()) {
             case R.id.action_refresh:
-                // Toast.makeText(MainActivity.this, "Sinhronizacija dugo traje koristite servis. dobro :)",Toast.LENGTH_SHORT).show();
-             /*   if (isStoragePermissionGranted()) {
-                    String text = ReviewerTools.readFF(this, "myfile.txt");
-                    Toast.makeText(this, text, Toast.LENGTH_SHORT).show();
-                } */
                 refresh();
                 break;
             case R.id.action_add:
-              /*  if (isStoragePermissionGranted()) {
-                    ReviewerTools.writeTF(new Date().toString(), this, "myfile.txt"); */
                 try {
                     addItem();
                 }catch (SQLException e){
                     e.printStackTrace();
                 }
-
-                    break;
-               // }
-           /* case R.id.test:
-                if (isStoragePermissionGranted()) {
-                    if (ReviewerTools.isFileExists(MainActivity.this, "myfile.txt")) {
-                        Toast.makeText(this, "File exist", Toast.LENGTH_SHORT).show();
-                    } else {
-                        Toast.makeText(this, "File don't exist", Toast.LENGTH_SHORT).show();
-                    }
-                }
-                break;*/
+                break;
+           case R.id.action_add_film:
+                addFilm();
+                break;
         }
 
         return super.onOptionsItemSelected(item);
@@ -441,7 +464,8 @@ public class MainActivity extends AppCompatActivity implements OnProductSelected
         if (listview != null){
             ArrayAdapter<Glumac> adapter = (ArrayAdapter<Glumac>) listview.getAdapter();
 
-            if (adapter != null){
+            if (adapter != null)
+            {
                 try {
                     adapter.clear();
                     List<Glumac> list = getDatabaseHelper().getGlumacDao().queryForAll();
@@ -474,10 +498,10 @@ public class MainActivity extends AppCompatActivity implements OnProductSelected
 
     // onConfigurationChanged method is called when the device configuration changes to pass configuration change to the drawer toggle
     @Override
-    public void onConfigurationChanged(Configuration newCconfig){
-        super.onConfigurationChanged(newCconfig);
+    public void onConfigurationChanged(Configuration newConfig){
+        super.onConfigurationChanged(newConfig);
         // Pass any configuration change to the drawer toggle
-        drawerToggle.onConfigurationChanged(newCconfig);
+        drawerToggle.onConfigurationChanged(newConfig);
     }
 
     // selectItemFromDrawer method is called when NavigationDrawer item is selected to update UI accordingly
@@ -515,7 +539,7 @@ public class MainActivity extends AppCompatActivity implements OnProductSelected
     }
 
     @Override
-    public void onProductSelected(int id) {
+    public void onGlumacSelected(int id) {
 
         glumacId = id;
 
@@ -570,98 +594,6 @@ public class MainActivity extends AppCompatActivity implements OnProductSelected
         return databaseHelper;
     }
 
-    /**
-     * Prilikom startovanja aplikacije potrebno je registrovati
-     * elemente sa kojimaa radimo. Kada aplikaciaj nije aktivna
-     * te elemente moramo da uklnimo.
-     */
-  /*  @Override
-    protected void onResume() {
-
-        super.onResume();
-
-        setUpReceiver();
-        setUpManager();
-    } */
-    /**
-     * Registrujemo nas BroadcastReceiver i dodajemo mu 'filter'.
-     * Filter koristimo prilikom prispeca poruka. Jedan receiver
-     * moze da reaguje na vise tipova poruka. One nam kazu
-     * sta tacno treba da se desi kada poruka odredjenog tipa (filera)
-     * stigne.
-     * */
-  /*  private void setUpReceiver(){
-        sync = new SimpleReceiver();
-
-        //registracija filtera(ovo je jedan, svaki mora da se registruje za sebe ako ih ima više)
-        IntentFilter filter = new IntentFilter();
-        filter.addAction("SYNC_DATA");
-        registerReceiver(sync, filter);
-
-        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
-
-        consultPreferences();
-    } */
-    /**
-     * Kada zelimo da se odredjeni zadaci ponavljaju, potrebno je
-     * da registrujemo manager koji ce motriti kada je vreme da se
-     * taj posao obavi. Kada registruje vreme za pokretanje zadatka
-     * on emituje Intent operativnom sistemu sta je potrebno da se
-     * desi.
-     * Takodje potrebno je da definisemo ponavljanja tj. na koliko
-     * vremena zelimo da se posao ponovo obavi
-     * */
-   /* private void setUpManager(){
-        //Intent koji ce manager emitovati operativnom sistemu
-        //Startujemo jedan servis
-        Intent intent = new Intent(this, SimpleService.class);
-        int status = ReviewerTools.getConnectivityStatus(getApplicationContext());
-        intent.putExtra("STATUS", status);
-
-        if (allowSync) {
-            //definisemo manager i kazemo kada je potrebno da se ponavlja
-            PendingIntent pintent = PendingIntent.getService(this, 0, intent, 0);
-
-            //koristicemo sistemski AlarmManager pa je potrebno da dobijemo
-            //njegovu instancu.
-            AlarmManager alarm = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-
-            //definisemo kako ce alarm manager da reaguje.
-            //prvi parametar kaze da ce reagovati u rezimu ponavljanja
-            //drugi parametar od kada krece da meri vreme
-            //treci parametar na koliko jedinica vremena ce reagovati (minimalno 1min)
-            //poslednji parametar nam govori koju akciju treba da preduzmemo kada se alarm iskljuci
-            alarm.setRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis(),
-                    ReviewerTools.calculateTimeTillNextSync(Integer.parseInt(synctime)),
-                    pintent);
-
-            Toast.makeText(this, "Alarm Set", Toast.LENGTH_SHORT).show();
-        }
-    } */
-
-  /*  private void consultPreferences(){
-        synctime = sharedPreferences.getString(getString(R.string.pref_sync_list), "1"); //1 minut
-        allowSync = sharedPreferences.getBoolean(getString(R.string.pref_sync), false);
-    } */
-    /**
-     * Moramo voditi racuna o komponentama koje je potrebno osloboditi
-     * kada aplikacija nije aktivna.
-     * */
- /*   @Override
-    protected void onPause(){
-        //ako je manager kreiran potrebno je da ga uklonimo
-        if (manager != null){
-            manager.cancel(pendingIntent);
-            manager = null;
-        }
-        //osloboditi resurse koje koristi receiver
-        if (sync != null){
-            unregisterReceiver(sync);
-            sync = null;
-        }
-
-        super.onPause();
-    } */
     @Override
     protected void onDestroy(){
         super.onDestroy();

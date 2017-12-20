@@ -83,16 +83,16 @@ public class Glumac {
         this.image = image;
     }
 
+    @Override
+    public String toString() {
+        return mName;
+    }
+
     public Film getFilm() {
         return film;
     }
 
     public void setFilm(Film film) {
         this.film = film;
-    }
-
-    @Override
-    public String toString() {
-        return mName;
     }
 }

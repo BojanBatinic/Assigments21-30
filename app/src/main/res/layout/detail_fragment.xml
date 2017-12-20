@@ -30,7 +30,7 @@
         android:layout_height="wrap_content" />
 
     <!-- EditText displays text to the user. -->
-    <EditText
+    <TextView
         android:id="@+id/name"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -41,7 +41,7 @@
         android:textStyle="bold"/>
 
     <!-- EditText displays text to the user. -->
-    <EditText
+    <TextView
         android:id="@+id/biografija"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -50,8 +50,7 @@
         android:gravity="center_vertical"
         android:textColor="#000000"/>
 
-    <!-- Spinners provide a quick way to select one value from a set. -->
-    <Spinner
+    <TextView
         android:id="@+id/film"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

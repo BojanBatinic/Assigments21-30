@@ -12,7 +12,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Name" />
+            android:text="Ime i prezime" />
 
         <EditText
             android:id="@+id/glumac_name"
@@ -56,24 +56,24 @@
 
     </LinearLayout>
 
-    <LinearLayout
+    <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:orientation="horizontal">
 
-        <TextView
-            android:layout_width="match_parent"
+        <Button
+            android:id="@+id/choose"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Image"/>
+            android:text="Izberi"/>
 
-        <Spinner
-            android:id="@+id/glumac_image"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
-
-        </Spinner>
-
-    </LinearLayout>
+        <ImageView
+            android:id="@+id/preview_image"
+            android:foregroundGravity="center_horizontal"
+            android:layout_toRightOf="@id/choose"
+            android:layout_width="60dp"
+            android:layout_height="60dp" />
+    </RelativeLayout>
 
     <LinearLayout
         android:layout_width="match_parent"

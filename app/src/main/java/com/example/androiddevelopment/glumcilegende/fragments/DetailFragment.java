@@ -1,8 +1,15 @@
 package com.example.androiddevelopment.glumcilegende.fragments;
 
 import android.app.Fragment;
+import android.app.NotificationManager;
+import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
+import android.net.Uri;
 import android.os.Bundle;
+import android.support.design.widget.FloatingActionButton;
+import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -11,25 +18,17 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
-import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.RatingBar;
-import android.widget.Spinner;
 import android.widget.TextView;
 
 import com.example.androiddevelopment.glumcilegende.R;
 import com.example.androiddevelopment.glumcilegende.activities.MainActivity;
-import com.example.androiddevelopment.glumcilegende.db.model.Film;
 import com.example.androiddevelopment.glumcilegende.db.model.Glumac;
-import com.example.androiddevelopment.glumcilegende.provider.FilmProvider;
-import com.example.androiddevelopment.glumcilegende.provider.GlumacProvider;
-import com.example.androiddevelopment.glumcilegende.tools.ReviewerTools;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.SQLException;
-import java.util.List;
 
 
 /**
@@ -99,37 +98,37 @@ public class DetailFragment extends Fragment implements AdapterView.OnItemSelect
         TextView biografija = (TextView) view.findViewById(R.id.biografija);
         biografija.setText(glumac.getBiografija());
 
+        //finds "tvFilm" TextView and sets "text" property
+        TextView film = (TextView) view.findViewById(R.id.film);
+        film.setText(glumac.getFilm().getName());
+
         //finds "rbRating" RatingBar and sets "rating" property
-        RatingBar rating = (RatingBar) view.findViewById(R.id.rating);
-        rating.setRating(glumac.getRating());
+        RatingBar ratingB = (RatingBar) view.findViewById(R.id.rating);
+        ratingB.setRating(glumac.getRating());
 
         //Finds "ivImage" ImageView and sets "imageDrawable" property
         ImageView ivImage = (ImageView) view.findViewById(R.id.image);
-        InputStream is = null;
-        try {
-            is = getActivity().getAssets().open(glumac.getImage());
-            Drawable drawable = Drawable.createFromStream(is, null);
-            ivImage.setImageDrawable(drawable);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        //finds "spFilm" Spiner and sets "selection" property
-        Spinner spinner = (Spinner) view.findViewById(R.id.film);
 
-        try {
-            List<com.example.androiddevelopment.glumcilegende.db.model.Film> list = ((MainActivity) getActivity()).getDatabaseHelper().getFilmDao().queryForAll();
-            ArrayAdapter<com.example.androiddevelopment.glumcilegende.db.model.Film> dataAdapter = new ArrayAdapter<Film>(getActivity(), android.R.layout.simple_spinner_item, list);
-            spinner.setAdapter(dataAdapter);
+        Uri mUri = Uri.parse(glumac.getImage());
+        ivImage.setImageURI(mUri);
 
-            for (int i=0; i<list.size(); i++){
-               if (list.get(i).getId() == glumac.getFilm().getId()){
-                   spinner.setSelection(i);
-                   break;
-               }
+        FloatingActionButton button = (FloatingActionButton) view.findViewById(R.id.like);
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // Creates notification with the notification builder
+                NotificationCompat.Builder builder = new NotificationCompat.Builder(getActivity());
+                Bitmap bitmap = BitmapFactory.decodeResource(getActivity().getResources(), R.drawable.ic_action_like);
+                builder.setSmallIcon(R.drawable.ic_action_like);
+                builder.setContentTitle(getActivity().getString(R.string.notification_title));
+                builder.setContentText(getActivity().getString(R.string.notification_text));
+                builder.setLargeIcon(bitmap);
+
+                // Shows notification with the notification manager (notification ID is used to update the notification later on)
+                NotificationManager manager = (NotificationManager)getActivity().getSystemService(Context.NOTIFICATION_SERVICE);
+                manager.notify(NOTIFICATION_ID, builder.build());
             }
-        }catch (SQLException e){
-            e.printStackTrace();
-        }
+        });
 
         return view;
     }
@@ -139,19 +138,19 @@ public class DetailFragment extends Fragment implements AdapterView.OnItemSelect
     }
 
 
-   /* public void updateGlumac(Glumac glumac) {
+    public void updateGlumac(Glumac glumac) {
         this.glumac = glumac;
 
-        EditText name = (EditText) getActivity().findViewById(R.id.name);
+        TextView name = (TextView) getActivity().findViewById(R.id.name);
         name.setText(glumac.getmName());
 
         //finds "tvBiografija" TextView and sets "text" property
-        EditText biografija = (EditText) getActivity().findViewById(R.id.biografija);
+        TextView biografija = (TextView) getActivity().findViewById(R.id.biografija);
         biografija.setText(glumac.getBiografija());
 
         //finds "rbRating" RatingBar and sets "rating" property
-        RatingBar rating = (RatingBar) getActivity().findViewById(R.id.rating);
-        rating.setRating(glumac.getRating());
+        RatingBar ratingB = (RatingBar) getActivity().findViewById(R.id.rating);
+        ratingB.setRating(glumac.getRating());
 
         //Finds "ivImage" ImageView and sets "imageDrawable" property
         ImageView ivImage = (ImageView) getActivity().findViewById(R.id.image);
@@ -164,9 +163,7 @@ public class DetailFragment extends Fragment implements AdapterView.OnItemSelect
             e.printStackTrace();
         }
 
-       /* Spinner film = (Spinner) getActivity().findViewById(R.id.film);
-        film.setSelection(glumac.getFilm().getId());*/
-    //}
+    }
 
     @Override
     public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
@@ -190,69 +187,7 @@ public class DetailFragment extends Fragment implements AdapterView.OnItemSelect
         super.onCreateOptionsMenu(menu, inflater);
     }
 
-    public void updateGlumac(Glumac glumac) {
-        this.glumac = glumac;
 
-        EditText name = (EditText) getActivity().findViewById(R.id.name);
-        name.setText(glumac.getmName());
-
-        //finds "tvBiografija" TextView and sets "text" property
-        EditText biografija = (EditText) getActivity().findViewById(R.id.biografija);
-        biografija.setText(glumac.getBiografija());
-
-        //finds "rbRating" RatingBar and sets "rating" property
-        RatingBar rating = (RatingBar) getActivity().findViewById(R.id.rating);
-        rating.setRating(glumac.getRating());
-
-        //Finds "ivImage" ImageView and sets "imageDrawable" property
-        ImageView ivImage = (ImageView) getActivity().findViewById(R.id.image);
-        InputStream is = null;
-        try {
-            is = getActivity().getAssets().open(glumac.getImage());
-            Drawable drawable = Drawable.createFromStream(is, null);
-            ivImage.setImageDrawable(drawable);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-       /* Spinner film = (Spinner) getActivity().findViewById(R.id.film);
-        film.setSelection(glumac.getFilm().getId());*/
-    }
-
-    public void doUpdateElement(){
-        if (glumac != null){
-            EditText name = (EditText) getActivity().findViewById(R.id.name);
-            glumac.setmName(name.getText().toString());
-
-            EditText biografija = (EditText) getActivity().findViewById(R.id.biografija);
-            glumac.setBiografija(biografija.getText().toString());
-
-            RatingBar ratingBar = (RatingBar) getActivity().findViewById(R.id.rating);
-            glumac.setRating(ratingBar.getRating());
-
-            Spinner film = (Spinner) getActivity().findViewById(R.id.film);
-            com.example.androiddevelopment.glumcilegende.db.model.Film f = (com.example.androiddevelopment.glumcilegende.db.model.Film)film.getSelectedItem();
-            glumac.setFilm(f);
-
-            try {
-                ((MainActivity) getActivity()).getDatabaseHelper().getGlumacDao().update(glumac);
-            }catch (SQLException e){
-                e.printStackTrace();
-            }
-            getActivity().onBackPressed();
-        }
-    }
-
-    private void doRemoveElement(){
-        if (glumac != null){
-            try{
-                ((MainActivity) getActivity()).getDatabaseHelper().getGlumacDao().delete(glumac);
-            }catch (SQLException e){
-                e.printStackTrace();
-            }
-            getActivity().onBackPressed();
-        }
-    }
 /**
  * Na fragment dodajemo element za brisanje elementa i za izmenu podataka
  * */
@@ -260,10 +195,14 @@ public class DetailFragment extends Fragment implements AdapterView.OnItemSelect
     public boolean onOptionsItemSelected(MenuItem item){
         switch (item.getItemId()){
             case R.id.remove:
-                doRemoveElement();
-                break;
-            case R.id.update:
-                doUpdateElement();
+                try{
+                    if(glumac != null){
+                        ((MainActivity) getActivity()).getDatabaseHelper().getGlumacDao().delete(glumac);
+                        getActivity().onBackPressed();
+                    }
+                }catch (SQLException e){
+                    e.printStackTrace();
+                }
                 break;
         }
         return super.onOptionsItemSelected(item);

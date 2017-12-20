@@ -30,10 +30,11 @@ public class ListFragment extends Fragment {
     private DatabaseHelper databaseHelper;
 
     // Container Activity must implement this interface
-    public interface OnProductSelectedListener {
-        void onProductSelected(int id);
+    public interface OnGlumacSelectedListener {
+        void onGlumacSelected(int id);
     }
-    OnProductSelectedListener listener;
+
+    OnGlumacSelectedListener listener;
     ListAdapter adapter;
 
     // onCreate method is a life-cycle method that is called when creating the fragment.
@@ -68,7 +69,7 @@ public class ListFragment extends Fragment {
 
                 Glumac g = (Glumac) listView.getItemAtPosition(position);
 
-                listener.onProductSelected(g.getmId());
+                listener.onGlumacSelected(g.getmId());
             }
         });
 
@@ -90,16 +91,6 @@ public class ListFragment extends Fragment {
         return view;
     }
 
-    // onDestroyView method is a life-cycle method that is called when the view previously created by onCreateView(LayoutInflater, ViewGroup, Bundle) has been detached from the fragment.
-
-  /*  @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-
-        //shows a toast message (a pop-up messsage)
-        Toast.makeText(getActivity(), "ListFragment.onDestroyView()", Toast.LENGTH_SHORT).show();
-    } */
-
     // onAttach method is a life-cycle method that is called when a fragment is first attached to its context.
     @Override
     public void onAttach(Activity activity) {
@@ -107,9 +98,9 @@ public class ListFragment extends Fragment {
 
        //shows a toast messsage (a pop-up message)
         try {
-            listener = (OnProductSelectedListener) activity;
+            listener = (OnGlumacSelectedListener) activity;
         } catch (ClassCastException e){
-            throw new ClassCastException(activity.toString() + " must implement OnItemSelectedListener");
+            throw new ClassCastException(activity.toString() + " must implement OnGlumacSelectedListener");
         }
     }
 

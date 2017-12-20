@@ -28,21 +28,11 @@
 
     <string name="drawer_open">Open Navigation Drawer</string>
     <string name="drawer_close">Close Navigation Drawer</string>
-    <string name="drawer_home">Home</string>
-    <string name="drawer_home_long">Show All Actors</string>
-    <string name="drawer_settings">Settings</string>
-    <string name="drawer_settings_long">Change App Settings</string>
+    <string name="drawer_home">Naslovna stranica</string>
+    <string name="drawer_home_long">Prikaži sve glumce</string>
+    <string name="drawer_settings">Podešavanja</string>
+    <string name="drawer_settings_long">Izmeni podešavanja</string>
     <string name="drawer_about">About</string>
     <string name="drawer_about_long">About Us</string>
-
-    <string name="autosync_problem">Automatic Sync problem</string>
-    <string name="no_internet">Bad news, no internet connection</string>
-    <string name="autosync_warning">Automatic Sync warning</string>
-    <string name="connect_to_wifi">Please connect to wifi to sync data</string>
-    <string name="autosync">Automatic Sync</string>
-    <string name="good_news_sync">Good news, everything in sync now.</string>
-    <string name="allow_message">Allow message</string>
-    <string name="allow_message_summary">Show messages in stats bar when they arrive</string>
-    <string name="allow_message_title">Allow showing messages</string>
 
 </resources>

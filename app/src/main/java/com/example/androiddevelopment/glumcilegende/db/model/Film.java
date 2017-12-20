@@ -12,6 +12,7 @@ public class Film {
     public static final String TABLE_NAME_USERS = "filmovi";
     public static final String FILED_NAME_ID = "id";
     public static final String FILED_NAME_NAME = "name";
+    public static final String FILED_NAME_IMAGE = "image";
 
     @DatabaseField(columnName = FILED_NAME_ID, generatedId = true)
     private int id;
@@ -19,13 +20,17 @@ public class Film {
     @DatabaseField(columnName = FILED_NAME_NAME)
     private String name;
 
+    @DatabaseField(columnName = FILED_NAME_IMAGE)
+    private String image;
+
     //ORMLite zahteva prazan konstuktur u klasama koje opisuju tabele u bazi!
     public Film() {
     }
 
-    public Film(int id, String name) {
+    public Film(int id, String name, String image) {
         this.id = id;
         this.name = name;
+        this.image = image;
     }
 
     public int getId() {
@@ -42,6 +47,14 @@ public class Film {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getImage() {
+        return image;
+    }
+
+    public void setImage(String image) {
+        this.image = image;
     }
 
     @Override

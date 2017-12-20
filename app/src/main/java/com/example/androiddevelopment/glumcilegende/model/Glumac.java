@@ -74,8 +74,4 @@ public class Glumac {
         this.film = film;
     }
 
-    @Override
-    public String toString() {
-        return name;
-    }
-}
+ }

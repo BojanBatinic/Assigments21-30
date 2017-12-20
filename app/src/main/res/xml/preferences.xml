@@ -27,11 +27,11 @@
             android:defaultValue="1"/>
 
         <!--  CheckBoxPreference will store a boolean into the SharedPreferences. -->
-        <CheckBoxPreference
+   <!--     <CheckBoxPreference
             android:defaultValue="false"
             android:key="@string/allow_message"
             android:summary="@string/allow_message_summary"
-            android:title="@string/allow_message_title" />
+            android:title="@string/allow_message_title" /> -->
 
     </PreferenceCategory>
 
