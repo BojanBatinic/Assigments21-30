@@ -44,7 +44,8 @@
             android:icon="@mipmap/ic_launcher"
             android:label="@string/activity_settings_name"
             android:theme="@style/AppTheme.NoActionBar"
-            android:parentActivityName="com.example.androiddevelopment.glumcilegende.activities.MainActivity">
+            android:parentActivityName="com.example.androiddevelopment.glumcilegende.activities.MainActivity" />
+        <activity android:name=".activities.ResultActivity">
         </activity>
 
     </application>

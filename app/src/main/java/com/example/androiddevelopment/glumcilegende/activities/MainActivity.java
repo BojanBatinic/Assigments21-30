@@ -27,12 +27,17 @@ import android.widget.RelativeLayout;
 import android.widget.Spinner;
 import android.widget.Toast;
 
-
+import java.io.Serializable;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 import com.example.androiddevelopment.glumcilegende.R;
 import com.example.androiddevelopment.glumcilegende.adapters.DrawerListAdapter;
 import com.example.androiddevelopment.glumcilegende.db.DatabaseHelper;
@@ -43,13 +48,14 @@ import com.example.androiddevelopment.glumcilegende.fragments.DetailFragment;
 import com.example.androiddevelopment.glumcilegende.fragments.ListFragment;
 import com.example.androiddevelopment.glumcilegende.fragments.ListFragment.OnGlumacSelectedListener;
 import com.example.androiddevelopment.glumcilegende.model.NavigationItem;
+import com.example.androiddevelopment.glumcilegende.net.MyService;
+import com.example.androiddevelopment.glumcilegende.net.model.Event;
 
 import com.j256.ormlite.android.apptools.OpenHelperManager;
+import com.squareup.picasso.Picasso;
 
 // Each activity extends Activity class or AppCompatActivity class
 public class MainActivity extends AppCompatActivity implements OnGlumacSelectedListener {
-
-   private static final int SELECT_PICTURE = 1;
 
     // The click listner for ListView in the navigation drawer
      /*
@@ -88,8 +94,6 @@ public class MainActivity extends AppCompatActivity implements OnGlumacSelectedL
     private int glumacId = 0; // selected item id
 
     private DatabaseHelper databaseHelper;
-    private String imagePath = null;
-    private ImageView preview;
 
     // onCreate method is a lifecycle method called when he activity is starting
     @Override
@@ -211,203 +215,27 @@ public class MainActivity extends AppCompatActivity implements OnGlumacSelectedL
         glumacId = 0;
     }
 
-    private void reset(){
-        imagePath = "";
-        preview = null;
-    }
 
-    private void addFilm(){
-        final Dialog dialog = new Dialog(this);
-        dialog.setContentView(R.layout.dialog_film_layout);
-
-        Button choosebtn = (Button) dialog.findViewById(R.id.choose);
-        choosebtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                preview = (ImageView) dialog.findViewById(R.id.preview_image);
-                selectPicture();
-            }
-        });
-
-        final EditText glumacName = (EditText) dialog.findViewById(R.id.glumac_name);
-
-        Button ok = (Button) dialog.findViewById(R.id.ok);
-        ok.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                String name = glumacName.getText().toString();
-
-                if(preview == null || imagePath == null){
-                    Toast.makeText(MainActivity.this, "Morate izabrati sliku", Toast.LENGTH_SHORT).show();
-                    return;
-                }
-                if (name.isEmpty()){
-                    Toast.makeText(MainActivity.this, "Morate uneti naziv filma", Toast.LENGTH_SHORT).show();
-                    return;
-                }
-
-                Film film = new Film();
-                film.setName(name);
-                film.setImage(imagePath);
-
-                try{
-                    getDatabaseHelper().getFilmDao().create(film);
-                    refresh();
-                    Toast.makeText(MainActivity.this, "Film dodat", Toast.LENGTH_SHORT).show();
-                    dialog.dismiss();
-
-                    reset();
-                }catch (SQLException e){
-                    e.printStackTrace();
-                }
-            }
-        });
-
-        Button cancel = (Button) dialog.findViewById(R.id.cancel);
-        cancel.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                dialog.dismiss();
-            }
-        });
-        dialog.show();
-    }
-
-    private void selectPicture(){
-        Intent intent = new Intent();
-        intent.setType("image/*");
-        intent.setAction(Intent.ACTION_GET_CONTENT);
-        startActivityForResult(Intent.createChooser(intent, "Izaberite fotograiju"), SELECT_PICTURE);
-    }
-
-    /**
-     * Sistematska metoda koja se automatski poziva ako se
-     * aktivnost startuje u startActivityForResult rezimu
-     *
-     * Ako je to slucaj i ako je sve proslo ok, mozemo da izvucemo
-     * sadrzaj i isti prikazemo. Rezultat NIJE slika nego URI do te slike.
-     * Na osnovu toga mozemo dobiti tacnu putanju do slike ali i samu sliku
-     * */
-    public void onActivityResult(int requestCode, int resultCode, Intent data){
-        if (resultCode == RESULT_OK){
-            if (requestCode == SELECT_PICTURE){
-                Uri selectedImageUri = data.getData();
-
-                try{
-                    Bitmap bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), selectedImageUri);
-                    if(selectedImageUri != null){
-                        imagePath = selectedImageUri.toString();
-                    }
-                    if (preview != null){
-                        preview.setImageBitmap(bitmap);
-                    }
-                }catch (IOException e){
-                    e.printStackTrace();
-                }
-            }
-        }
-    }
 
     //da bi dodali podatak u bazu, potrebno je da napravimo objekat klase
     //koji reprezentuje tabelu i popunimo podacima
-    private void addItem() throws SQLException {
-        final Dialog dialog = new Dialog(this);
-        dialog.setContentView(R.layout.dialog_layout);
+    private void addItem() {
+        Glumac glumac = new Glumac();
+        glumac.setmName("Bata");
+        glumac.setBiografija("Legenda u svakom smislu te reči.");
+        glumac.setRating(5.0f);
+        glumac.setImage("velimir.jpg");
 
-       Button choosebtn = (Button) dialog.findViewById(R.id.choose);
-       choosebtn.setOnClickListener(new View.OnClickListener() {
-           @Override
-           public void onClick(View v) {
-               preview = (ImageView) dialog.findViewById(R.id.preview_image);
-               selectPicture();
-           }
-       });
+        //pozovemo metodu create da bi upisali u bazu
+        try {
+            getDatabaseHelper().getGlumacDao().create(glumac);
 
-        final Spinner glumaciSpinner = (Spinner) dialog.findViewById(R.id.glumac_film);
-        List<Film> list = getDatabaseHelper().getFilmDao().queryForAll();
-        ArrayAdapter<Film> dataAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, list);
-        glumaciSpinner.setAdapter(dataAdapter);
-        glumaciSpinner.setSelection(0);
+            refresh();
 
-        final EditText glumacName = (EditText) dialog.findViewById(R.id.glumac_name);
-        final EditText glumacBiog = (EditText) dialog.findViewById(R.id.glumac_biografija);
-        final EditText glumacRating = (EditText) dialog.findViewById(R.id.glumac_rating);
-
-        Button ok = (Button) dialog.findViewById(R.id.ok);
-        ok.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                try {
-                    String name = glumacName.getText().toString();
-                    String biog = glumacBiog.getText().toString();
-                    //Voditi racuna kada radimo sa brojevima. Ono sto unesemo mora biti broj
-                    //da bi formater uspeo ispravno da formatira broj. Dakle ono sto unesemo
-                    //bice u teksutalnom obliku, i mora biti moguce pretrovirit u broj.
-                    //Ako nije moguce pretvoriti u broj dobicemo NumberFormatException
-                    //Zato je dobro za input gde ocekujemo da stavimo broj, stavimo u xml-u
-                    //da ce tu biti samo unet broj npr android:inputType="number|numberDecimal"
-                    float zvezdice = Float.parseFloat(glumacRating.getText().toString());
-
-                    Film film = (Film) glumaciSpinner.getSelectedItem();
-
-                    if (name.isEmpty()){
-                        Toast.makeText(MainActivity.this, "Morate uneti ime i prezime glumca", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-
-                    if (biog.isEmpty()){
-                        Toast.makeText(MainActivity.this, "Moarte uneti osnovnu biografiju glumca", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-
-                    if (film == null){
-                        Toast.makeText(MainActivity.this, "Morate izabrati zanr filma", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-
-                    if (preview == null || imagePath == null){
-                        Toast.makeText(MainActivity.this, "Morate izabrati fotografiju", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-
-                    Glumac glumac = new Glumac();
-                    glumac.setmName(name);
-                    glumac.setBiografija(biog);
-                    glumac.setRating(zvezdice);
-                    glumac.setImage(imagePath);
-                    glumac.setFilm(film);
-
-                    getDatabaseHelper().getGlumacDao().create(glumac);
-                    refresh();
-                    Toast.makeText(MainActivity.this, "Glumac dodat", Toast.LENGTH_SHORT).show();
-                    dialog.dismiss();
-
-                    reset();
-
-                }catch (SQLException e){
-                    e.printStackTrace();
-
-                }catch (NumberFormatException e){
-                    Toast.makeText(MainActivity.this, "Rating mora biti broj", Toast.LENGTH_SHORT).show();
-
-                }
-            }
-        });
-
-        Button cancel = (Button) dialog.findViewById(R.id.cancel);
-        cancel.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                dialog.dismiss();
-            }
-        });
-
-        if (dataAdapter.isEmpty()){
-            Toast.makeText(MainActivity.this, "Ne postoji ni jedan unet film, molim Vas da prvo unesete film.", Toast.LENGTH_SHORT).show();
-
+            Toast.makeText(this, "Glumac dodat", Toast.LENGTH_SHORT).show();
+        }catch (SQLException e){
+            e.printStackTrace();
         }
-
-        dialog.show();
     }
 
     /**Toolbar**/
@@ -443,18 +271,34 @@ public class MainActivity extends AppCompatActivity implements OnGlumacSelectedL
                 refresh();
                 break;
             case R.id.action_add:
-                try {
-                    addItem();
-                }catch (SQLException e){
-                    e.printStackTrace();
-                }
+                addItem();
                 break;
-           case R.id.action_add_film:
-                addFilm();
+           case R.id.action_image:
+                showRandomImage();
                 break;
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    private void showRandomImage(){
+        final Dialog dialog = new Dialog(this);
+        dialog.setContentView(R.layout.band_layout);
+
+        ImageView image = (ImageView) dialog.findViewById(R.id.band_image);
+
+        Picasso.with(this).load("https://source.unsplash.com/random").into(image);
+
+        Button close = (Button) dialog.findViewById(R.id.close);
+        close.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dialog.dismiss();
+            }
+        });
+
+        dialog.show();
+
     }
 
     // refresh() prikazuje novi sadrzaj.Povucemo nov sadrzaj iz baze i popunimo listu
@@ -605,5 +449,104 @@ public class MainActivity extends AppCompatActivity implements OnGlumacSelectedL
         }
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        //samo pozovemo metodu kada je potrebno da se ona izvrsi i ne moramo da vodimo vise racuna
+        //o pozadinskom desavanju
+        //getArtistByName("Metallica");
+        inputDialogShow();
+    }
+
+    /**
+     * Poziv REST servisa se odvija u pozadini i mi ne moramo da vodimo racuna o tome
+     * Samo je potrebno da registrujemo sta da se desi kada odgovor stigne od nas
+     * Taj deo treba da implementiramo dodavajuci Callback<List<Event>> unutar enqueue metode
+     *
+     * Servis koji pozivamo izgleda:
+     * http://rest.bandsintown.com/artists/Metallica/events?app_id=test
+     *
+     * gde je :
+     *
+     * http://rest.bandsintown.com/ osnova servisa
+     * artists/Metallica/events poziv servisa koji ce vratiti informacije o grupi
+     * ?app_id=test spisak dodatnih paraetara ili upit nad servisom
+     * */
+    private void getArtistByName(String name){
+        Map<String, String> query = new HashMap<String, String>();
+        query.put("app_id", "test");
+
+        Call<List<Event>> call = MyService.apiInterface().getArtistByName(name, query);
+        call.enqueue(new Callback<List<Event>>() {
+            @Override
+            public void onResponse(Call<List<Event>> call, Response<List<Event>> response) {
+                //obavezno proveriti da li je upit zavrsen uspesno 200 kod
+                if (response.code() == 200){
+                    List<Event> events = response.body();
+
+                    //posto sliku ucitavamo sa interneta, moramo je u pozadini skinuti na nas urejdja
+                    //da bi je prikazali. Da ne bi mi morali voditi racina o tome Picasso biblioteka
+                    // nam moze pomoci u tome. POtrebno je da kazemo sa koje adrese se slika ucitava
+                    // u koji imgeview objekat se ucitaca i u kojoj aktivnosti se posao odvija
+                    //Picasso.with(MainActivity.this).load(putanja_do_slike).into(imageView_u_koji_zelimo_da_smestimo_sliku);
+
+                    if (events.size() > 0){
+                        //List<String> data = new ArrayList<String>();
+                        String[] data = new String[events.size()];
+
+                        for (int i=0; i<events.size();i++){
+                            data[i] = events.get(i).getVenue().getName()+" : "+events.get(i).getDatetime();
+                        }
+
+                        Intent intent = new Intent(MainActivity.this, ResultActivity.class);
+                        intent.putExtra("data", data);
+                        startActivity(intent);
+                        Toast.makeText(MainActivity.this, "Prikaz eventova", Toast.LENGTH_SHORT).show();
+                    }else {
+                        Toast.makeText(MainActivity.this, "Nema event-ova", Toast.LENGTH_SHORT).show();
+                    }
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<Event>> call, Throwable t) {
+                //u slucaju da je nesto poslo po zlu, ispisemo sta nije u redu tj sta je poruka greske
+                Toast.makeText(MainActivity.this, t.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private void inputDialogShow(){
+        final Dialog dialog = new Dialog(this);
+        dialog.setContentView(R.layout.input_dialog);
+
+        final EditText input_name = (EditText)dialog.findViewById(R.id.input_name);
+
+        Button get_data = (Button)dialog.findViewById(R.id.get_data);
+        get_data.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String data = input_name.getText().toString();
+
+                //Ako naziv izvodjaca sadrzi razmak zameniti sa %20
+                //%20 je nacin da se u putanji na internetu predstavi razmak
+//                if (data.contains(" ")){
+//                    data = data.replace(" ", "%20");
+//                }
+
+                Toast.makeText(MainActivity.this, data, Toast.LENGTH_SHORT).show();
+
+                getArtistByName(data);
+
+                dialog.dismiss();
+            }
+        });
+
+        dialog.show();
+    }
 
 }
+
+
+

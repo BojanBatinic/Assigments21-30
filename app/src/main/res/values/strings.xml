@@ -16,7 +16,7 @@
     <string name="notification_text">The selected item has been liked</string>
 
     <string name="dialog_about_title">About</string>
-    <string name="dialog_about_message">This is the Vezba app which demonstrates usage of Assignments 21/30 add in one app by Bojan Batinic</string>
+    <string name="dialog_about_message">This is the Vezba app which demonstrates usage of Assignments 21/28 add in one app by Bojan Batinic</string>
     <string name="dialog_about_yes">OK</string>
     <string name="dialog_about_no">Cancel</string>
 
@@ -34,5 +34,6 @@
     <string name="drawer_settings_long">Izmeni podešavanja</string>
     <string name="drawer_about">About</string>
     <string name="drawer_about_long">About Us</string>
+    <string name="show_image">Show image</string>
 
 </resources>

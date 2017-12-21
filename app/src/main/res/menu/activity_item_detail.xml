@@ -10,14 +10,14 @@
         app:showAsAction="ifRoom" />
 
     <item android:id="@+id/action_add"
-        android:title="Dodaj glumca"
-        app:showAsAction="withText" />
-       <!-- android:icon="@drawable/ic_action_add" -->
+        android:title="@string/fragment_detail_action_add"
+        app:showAsAction="ifRoom"
+        android:icon="@drawable/ic_action_add" />
 
 
-   <item android:id="@+id/action_add_film"
-        android:title="Dodaj film"
-        app:showAsAction="withText" />
-       <!-- android:icon="@drawable/ic_action_info" -->
+   <item android:id="@+id/action_image"
+        android:title="@string/show_image"
+        app:showAsAction="ifRoom"
+        android:icon="@drawable/ic_action_camera"/>
 
 </menu>

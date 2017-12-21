@@ -98,10 +98,6 @@ public class DetailFragment extends Fragment implements AdapterView.OnItemSelect
         TextView biografija = (TextView) view.findViewById(R.id.biografija);
         biografija.setText(glumac.getBiografija());
 
-        //finds "tvFilm" TextView and sets "text" property
-        TextView film = (TextView) view.findViewById(R.id.film);
-        film.setText(glumac.getFilm().getName());
-
         //finds "rbRating" RatingBar and sets "rating" property
         RatingBar ratingB = (RatingBar) view.findViewById(R.id.rating);
         ratingB.setRating(glumac.getRating());
