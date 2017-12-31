@@ -20,27 +20,27 @@ import java.util.ArrayList;
 public class DrawerListAdapter extends BaseAdapter {
 
     // A reference to the context (i.e. the activity containing the adapter)
-    Context context;
-    ArrayList<NavigationItem> navigationItems;
+    Context mContext;
+    ArrayList<NavigationItem> mNavigationItems;
 
     // Constructor should at least have context as a parameter
 
 
     public DrawerListAdapter(Context context, ArrayList<NavigationItem> navigationItems) {
-        this.context = context;
-        this.navigationItems = navigationItems;
+        mContext = context;
+        mNavigationItems = navigationItems;
     }
 
     // Returns the item count
     @Override
     public int getCount() {
-        return navigationItems.size();
+        return mNavigationItems.size();
     }
 
     // Returns an item
     @Override
     public Object getItem(int position) {
-        return navigationItems.get(position);
+        return mNavigationItems.get(position);
     }
 
     // Returns an item ID
@@ -53,7 +53,7 @@ public class DrawerListAdapter extends BaseAdapter {
     public View getView(int position, View convertView, ViewGroup parent) {
         View view;
         if(convertView == null){
-            LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+            LayoutInflater inflater = (LayoutInflater) mContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
             view = inflater.inflate(R.layout.drawer_list_item, null);
         }
         else{
@@ -64,9 +64,9 @@ public class DrawerListAdapter extends BaseAdapter {
         TextView subtitleView = (TextView) view.findViewById(R.id.subTitle);
         ImageView iconView = (ImageView) view.findViewById(R.id.icon);
 
-        titleView.setText(navigationItems.get(position).getTitle());
-        subtitleView.setText(navigationItems.get(position).getSubtitle());
-        iconView.setImageResource(navigationItems.get(position).getIcon());
+        titleView.setText(mNavigationItems.get(position).getmTitle());
+        subtitleView.setText(mNavigationItems.get(position).getmSubtitle());
+        iconView.setImageResource(mNavigationItems.get(position).getmIcon());
 
         return view;
     }

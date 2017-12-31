@@ -27,13 +27,15 @@
         android:layout_toEndOf="@+id/icon"
         android:textSize="18sp"
         android:gravity="center_vertical"
-        android:textColor="#000000"
+        android:textColor="#000"
+        android:text="Line 1"
         android:textStyle="bold"/>
 
     <TextView
         android:id="@+id/subTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:text="Line 2"
         android:layout_toRightOf="@+id/icon"
         android:layout_below="@+id/title"
         android:layout_alignParentRight="true"

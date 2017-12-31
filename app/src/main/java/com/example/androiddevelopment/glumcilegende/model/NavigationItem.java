@@ -7,74 +7,44 @@ import android.os.Parcelable;
  * Created by BBLOJB on 22.11.2017..
  */
 
-public class NavigationItem implements Parcelable {
+public class NavigationItem {
 
-    private String title;
-    private String subtitle;
-    private int icon;
+    private String mTitle;
+    private String mSubtitle;
+    private int mIcon;
 
     public NavigationItem(String title, String subtitle, int icon){
-        this.title = title;
-        this.subtitle = subtitle;
-        this.icon = icon;
+        mTitle = title;
+        mSubtitle = subtitle;
+        mIcon = icon;
     }
 
-    protected NavigationItem(Parcel in){
-        title = in.readString();
-        subtitle = in.readString();
-        icon = in.readInt();
+    public String getmTitle() {
+        return mTitle;
     }
 
-    public static final Creator<NavigationItem> CREATOR = new Creator<NavigationItem>(){
-     @Override
-        public NavigationItem createFromParcel(Parcel in){
-         return new NavigationItem(in);
-     }
-     @Override
-        public NavigationItem[] newArray(int size){
-            return new NavigationItem[size];
-     }
-    };
-
-    public String getTitle() {
-        return title;
+    public void setmTitle(String mTitle) {
+        this.mTitle = mTitle;
     }
 
-    public void setTitle(String title) {
-        this.title = title;
+    public String getmSubtitle() {
+        return mSubtitle;
     }
 
-    public String getSubtitle() {
-        return subtitle;
+    public void setmSubtitle(String mSubtitle) {
+        this.mSubtitle = mSubtitle;
     }
 
-    public void setSubtitle(String subtitle) {
-        this.subtitle = subtitle;
+    public int getmIcon() {
+        return mIcon;
     }
 
-    public int getIcon() {
-        return icon;
-    }
-
-    public void setIcon(int icon) {
-        this.icon = icon;
+    public void setmIcon(int mIcon) {
+        this.mIcon = mIcon;
     }
 
     @Override
     public String toString() {
-        return title;
-    }
-
-    @Override
-    public int describeContents() {
-        return 0;
-    }
-
-    @Override
-    public void writeToParcel(Parcel out, int flags) {
-        out.writeString(title);
-        out.writeString(subtitle);
-        out.writeInt(icon);
-
+        return mTitle;
     }
 }
